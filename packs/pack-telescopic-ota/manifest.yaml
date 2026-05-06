@@ -1,0 +1,43 @@
+# pack-telescopic-ota — Telescopic Cascode OTA PACK
+
+name: pack-telescopic-ota
+version: 1.0.0
+manifest_schema_version: v4-1.1
+tier: 1
+
+description: |
+  Telescopic Cascode OTA 设计知识包：套筒式高增益单级、headroom 紧张
+  trade-off、cascode 自偏置 / wide-swing 偏置、低噪声场景应用、与
+  folded cascode 的取舍。
+
+author: cirona team
+license: MIT
+
+contributes:
+  knowledge:
+    - knowledge/blocks/telescopic-ota
+
+requires:
+  cirona: ">=4.0.0,<5.0.0"
+
+depends_on: []
+
+activation:
+  keywords:
+    - telescopic
+    - telescopic OTA
+    - 套筒式
+    - 套筒 cascode
+  user_says:
+    - 设计 telescopic OTA
+    - 设计套筒式 OTA
+    - 套筒 cascode 运放
+
+metadata:
+  category: ota
+  status: stable
+  display_name: Telescopic Cascode OTA
+  tags:
+    - ota
+    - cascode
+    - single-stage

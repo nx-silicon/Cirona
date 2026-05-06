@@ -1,0 +1,69 @@
+# V4 Tool 元信息（V4_TOOL_API_SPEC schema）
+#
+# Tier 3 PACK 才需要 Tool；Tier 1/2 删掉 tools/ 目录即可。
+# Tool 设计原则（V4_DIRECTION §1.4）:
+#   - SPICE-中心 — 输入或输出至少一边是 SPICE 字符串
+#   - 纯函数（无副作用、无全局状态）
+#   - 描述里明确"何时召唤"+ 输入约束 + 失败模式
+
+name: example_tool
+version: 0.1.0
+
+# 必填：tool 调用入口（agent visible）
+description: |
+  示例 sizing 工具。给定 spec（Vov_target / Id / pdk）+ device 类型，
+  返回 W/L/m 起点（或 SPICE 片段）。
+
+  WHEN TO CALL:
+    - 用户首次给出 device-level spec
+    - sizing 起点不确定时
+
+  WHEN NOT TO CALL:
+    - device 已被 inspect 过（直接读 op_point 数据）
+    - spec 不完整（缺 pdk_name / Id 等关键参数 → 先问用户）
+
+# 可选：handler 入口
+entry: handler.handle
+
+# 输入参数 JSON Schema
+parameters:
+  type: object
+  properties:
+    pdk_name:
+      type: string
+      description: PDK 标识（如 vpdk180nm）
+      enum: [vpdk180nm]
+    device_type:
+      type: string
+      enum: [nmos, pmos]
+    Id_target:
+      type: number
+      description: 目标 Id (A)；典型 1µ - 100µ
+      minimum: 1.0e-7
+      maximum: 1.0e-3
+    Vov_target:
+      type: number
+      description: 目标 Vov (V)；strong inversion 0.1-0.3V
+      minimum: 0.05
+      maximum: 0.5
+  required: [pdk_name, device_type, Id_target, Vov_target]
+
+# 输出 JSON Schema
+returns:
+  type: object
+  properties:
+    W:
+      type: number
+      description: 推荐 W (m)
+    L:
+      type: number
+      description: 推荐 L (m)
+    m:
+      type: integer
+    sizing_spice_fragment:
+      type: string
+      description: SPICE-format sizing 一行（W=... L=... m=...）
+
+# 必填：tool 适用范围
+applicable_pdks: [vpdk180nm]
+authors: ["Your Name"]

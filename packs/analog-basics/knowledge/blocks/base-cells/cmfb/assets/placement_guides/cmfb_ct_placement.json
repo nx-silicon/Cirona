@@ -1,0 +1,179 @@
+{
+  "cell_name": "cmfb",
+  "description": "Topology-aware placement for cmfb (differential_pair)",
+  "grid_size": {
+    "cols": 7,
+    "rows": 5
+  },
+  "placements": {
+    "MMCM3": {
+      "type": "pmos",
+      "col": 0,
+      "row": 1,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "MMCM4": {
+      "type": "pmos",
+      "col": 2,
+      "row": 1,
+      "orientation": "normal",
+      "flip_h": true
+    },
+    "MMCM1": {
+      "type": "nmos",
+      "col": 0,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "MMCM2": {
+      "type": "nmos",
+      "col": 2,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": true
+    },
+    "RCM1": {
+      "type": "resistor",
+      "col": 4,
+      "row": 2,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "RCM2": {
+      "type": "resistor",
+      "col": 6,
+      "row": 2,
+      "orientation": "normal",
+      "flip_h": false
+    }
+  },
+  "internal_nets": {
+    "vcm_sense": [
+      "RCM1__port__B",
+      "RCM2__port__B",
+      "MMCM1__port__G"
+    ],
+    "ncm_mirror": [
+      "MMCM1__port__D",
+      "MMCM3__port__G",
+      "MMCM3__port__D",
+      "MMCM4__port__G"
+    ],
+    "ncm_tail": [
+      "MMCM1__port__S",
+      "MMCM2__port__S"
+    ],
+    "vcmfb_ctrl": [
+      "MMCM2__port__D",
+      "MMCM4__port__D"
+    ]
+  },
+  "external_ports": {
+    "outp": {
+      "connects_to": "RCM1__port__T",
+      "direction": "output",
+      "side": "right"
+    },
+    "outn": {
+      "connects_to": "RCM2__port__T",
+      "direction": "output",
+      "side": "right"
+    },
+    "vcmref": {
+      "connects_to": "MMCM2__port__G",
+      "direction": "input",
+      "side": "left"
+    },
+    "vdd": {
+      "connects_to": [
+        "MMCM3__port__S",
+        "MMCM4__port__S"
+      ],
+      "direction": "power",
+      "side": "top"
+    }
+  },
+  "macros": {
+    "core": {
+      "type": "base_cell",
+      "cell_name": "cmfb",
+      "footprint": "differential-pair",
+      "template": "dual_device_horizontal_3col",
+      "origin": {
+        "col": 0,
+        "row": 0
+      },
+      "size": {
+        "cols": 3,
+        "rows": 2
+      },
+      "anchors": {
+        "vinp": {
+          "side": "left",
+          "offset": 0
+        },
+        "vinn": {
+          "side": "right",
+          "offset": 0
+        },
+        "tail": {
+          "side": "bottom",
+          "offset": 1
+        },
+        "outp": {
+          "side": "top",
+          "offset": 0
+        },
+        "outn": {
+          "side": "top",
+          "offset": 2
+        }
+      },
+      "bands": [
+        "signal",
+        "nmos"
+      ],
+      "symmetry": {
+        "type": "mirror-x",
+        "center_col": 1,
+        "center_gap": 1
+      },
+      "children": [
+        "MMCM3",
+        "MMCM4",
+        "MMCM1",
+        "MMCM2",
+        "RCM1",
+        "RCM2"
+      ],
+      "hierarchy": {
+        "child_cell": "cmfb",
+        "child_view": "schematic"
+      }
+    }
+  },
+  "anchors": {
+    "vinp": {
+      "owner": "core",
+      "anchor": "vinp"
+    },
+    "vinn": {
+      "owner": "core",
+      "anchor": "vinn"
+    },
+    "tail": {
+      "owner": "core",
+      "anchor": "tail"
+    },
+    "outp": {
+      "owner": "core",
+      "anchor": "outp"
+    },
+    "outn": {
+      "owner": "core",
+      "anchor": "outn"
+    }
+  }
+}

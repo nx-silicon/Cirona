@@ -1,0 +1,56 @@
+name: ✨ Feature Request / 功能建议
+description: Suggest a new feature or improvement / 建议新功能或改进
+title: "[Feature] "
+labels: ["enhancement"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Got an idea? Please share — we read every suggestion.
+
+        有想法欢迎分享，我们会认真阅读每一条建议。
+
+  - type: textarea
+    id: problem
+    attributes:
+      label: Problem to solve / 想解决的问题
+      description: What pain point are you hitting? Without a clear problem, the solution is hard to evaluate. / 你遇到了什么痛点？没有明确的问题，方案就难以评估。
+    validations:
+      required: true
+
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Proposed solution / 提议的方案
+      description: How would you like Cirona to behave? / 你希望 Cirona 怎么做？
+    validations:
+      required: true
+
+  - type: textarea
+    id: alternatives
+    attributes:
+      label: Alternatives considered / 已考虑的替代方案
+      description: Other approaches you've thought about (or competing tools that already do this well). / 你想过的其他做法，或已有工具中做得好的参考。
+
+  - type: dropdown
+    id: scope
+    attributes:
+      label: Scope / 影响范围
+      description: Which area does this touch? / 这个建议主要影响哪一块？
+      options:
+        - UI / UX
+        - AI behaviour / AI 行为
+        - Pack / Skill / Knowledge base / 知识库
+        - Simulation / 仿真
+        - Optimisation / 优化
+        - Documentation / 文档
+        - Packaging / Installer / 打包安装
+        - Other / 其他
+    validations:
+      required: true
+
+  - type: textarea
+    id: context
+    attributes:
+      label: Additional context / 补充信息
+      description: Screenshots, paper references, similar tools, mockups — anything that makes the request concrete. / 截图、论文引用、类似工具、原型图——任何能让需求具象化的内容。

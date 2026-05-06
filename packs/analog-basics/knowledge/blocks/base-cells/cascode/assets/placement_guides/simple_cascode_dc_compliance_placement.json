@@ -1,0 +1,151 @@
+{
+  "cell_name": "cascode",
+  "description": "Topology-aware placement for cascode (cascode)",
+  "grid_size": {
+    "cols": 2,
+    "rows": 5
+  },
+  "placements": {
+    "MREF_CAS": {
+      "type": "nmos",
+      "col": 0,
+      "row": 3,
+      "orientation": "normal",
+      "flip_h": true
+    },
+    "MREF": {
+      "type": "nmos",
+      "col": 0,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": true
+    },
+    "MOUT_CAS": {
+      "type": "nmos",
+      "col": 1,
+      "row": 3,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "MOUT": {
+      "type": "nmos",
+      "col": 1,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": false
+    }
+  },
+  "internal_nets": {
+    "ref_cas_d": [
+      "MREF_CAS__port__D",
+      "MREF__port__G",
+      "MOUT__port__G"
+    ],
+    "ref_main_d": [
+      "MREF_CAS__port__S",
+      "MREF__port__D"
+    ],
+    "out_main_d": [
+      "MOUT__port__D",
+      "MOUT_CAS__port__S"
+    ]
+  },
+  "external_ports": {
+    "ref_cas_d": {
+      "connects_to": [
+        "MREF_CAS__port__D",
+        "MREF__port__G",
+        "MOUT__port__G"
+      ],
+      "direction": "input",
+      "side": "left",
+      "anchor": "core.in"
+    },
+    "cas_bias": {
+      "connects_to": [
+        "MREF_CAS__port__G",
+        "MOUT_CAS__port__G"
+      ],
+      "direction": "input",
+      "side": "left",
+      "anchor": "core.bias"
+    },
+    "vss": {
+      "connects_to": [
+        "MREF__port__S",
+        "MOUT__port__S",
+        "MOUT_CAS__port__D"
+      ],
+      "direction": "power",
+      "side": "bottom",
+      "anchor": "core.supply"
+    }
+  },
+  "macros": {
+    "core": {
+      "type": "base_cell",
+      "cell_name": "cascode",
+      "footprint": "cascode",
+      "template": "cascode_stack_2row",
+      "origin": {
+        "col": 0,
+        "row": 0
+      },
+      "size": {
+        "cols": 2,
+        "rows": 3
+      },
+      "anchors": {
+        "in": {
+          "side": "bottom",
+          "offset": 0
+        },
+        "out": {
+          "side": "top",
+          "offset": 1
+        },
+        "bias": {
+          "side": "left",
+          "offset": 1
+        },
+        "supply": {
+          "side": "bottom",
+          "offset": 1
+        }
+      },
+      "bands": [
+        "signal",
+        "nmos"
+      ],
+      "symmetry": null,
+      "children": [
+        "MREF_CAS",
+        "MREF",
+        "MOUT_CAS",
+        "MOUT"
+      ],
+      "hierarchy": {
+        "child_cell": "cascode",
+        "child_view": "schematic"
+      }
+    }
+  },
+  "anchors": {
+    "in": {
+      "owner": "core",
+      "anchor": "in"
+    },
+    "out": {
+      "owner": "core",
+      "anchor": "out"
+    },
+    "bias": {
+      "owner": "core",
+      "anchor": "bias"
+    },
+    "supply": {
+      "owner": "core",
+      "anchor": "supply"
+    }
+  }
+}

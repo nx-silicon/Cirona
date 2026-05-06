@@ -1,0 +1,64 @@
+{
+  "cell_name": "active-load-cell",
+  "description": "User-edited placement for active-load-cell",
+  "grid_size": {
+    "cols": 10,
+    "rows": 8
+  },
+  "placements": {
+    "M1": {
+      "type": "nmos",
+      "col": 2,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "M2": {
+      "type": "pmos",
+      "col": 2,
+      "row": 0,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "Mbias_p": {
+      "type": "pmos",
+      "col": 1,
+      "row": 0,
+      "orientation": "normal",
+      "flip_h": false
+    }
+  },
+  "internal_nets": {
+    "vbias_p": [
+      "Mbias_p__port__G",
+      "Mbias_p__port__D",
+      "M2__port__G"
+    ],
+    "vout": [
+      "M2__port__D",
+      "M1__port__D"
+    ]
+  },
+  "external_ports": {
+    "vdd": {
+      "connects_to": [
+        "Mbias_p__port__S",
+        "M2__port__S"
+      ],
+      "direction": "power",
+      "side": "top"
+    },
+    "vin": {
+      "connects_to": "M1__port__G",
+      "direction": "input",
+      "side": "left"
+    },
+    "vss": {
+      "connects_to": [
+        "M1__port__S"
+      ],
+      "direction": "power",
+      "side": "bottom"
+    }
+  }
+}

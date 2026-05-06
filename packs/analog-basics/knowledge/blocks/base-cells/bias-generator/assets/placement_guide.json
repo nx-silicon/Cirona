@@ -1,0 +1,60 @@
+{
+  "cell_name": "bias-generator",
+  "description": "User-edited placement for bias-generator",
+  "grid_size": {
+    "cols": 10,
+    "rows": 8
+  },
+  "placements": {
+    "MN_SINK_VBP": {
+      "type": "nmos",
+      "col": 2,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "MN_VBN": {
+      "type": "nmos",
+      "col": 0,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "MP_DIO_VBP": {
+      "type": "pmos",
+      "col": 2,
+      "row": 0,
+      "orientation": "normal",
+      "flip_h": false
+    }
+  },
+  "internal_nets": {
+    "vbn": [
+      "MN_VBN__port__D",
+      "MN_VBN__port__G",
+      "MN_SINK_VBP__port__G"
+    ],
+    "vbp": [
+      "MN_SINK_VBP__port__D",
+      "MP_DIO_VBP__port__G",
+      "MP_DIO_VBP__port__D"
+    ]
+  },
+  "external_ports": {
+    "vdd": {
+      "connects_to": [
+        "MP_DIO_VBP__port__S"
+      ],
+      "direction": "power",
+      "side": "top"
+    },
+    "vss": {
+      "connects_to": [
+        "MN_VBN__port__S",
+        "MN_SINK_VBP__port__S"
+      ],
+      "direction": "power",
+      "side": "bottom"
+    }
+  }
+}

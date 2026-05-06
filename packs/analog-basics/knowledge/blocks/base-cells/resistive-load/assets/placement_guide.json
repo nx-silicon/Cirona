@@ -1,0 +1,74 @@
+{
+  "schema_version": "2.0",
+  "cell_name": "resistive-load-cell",
+  "description": "User-edited placement for resistive-load-cell",
+  "grid_size": {
+    "cols": 10,
+    "rows": 8
+  },
+  "placements": {
+    "M1": {
+      "type": "nmos",
+      "col": 1,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "RD": {
+      "type": "resistor",
+      "col": 1,
+      "row": 2,
+      "orientation": "normal",
+      "flip_h": false
+    }
+  },
+  "internal_nets": {
+    "out": [
+      "RD__port__B",
+      "M1__port__D"
+    ]
+  },
+  "external_ports": {
+    "gate": {
+      "connects_to": "M1__port__G",
+      "direction": "input",
+      "side": "left"
+    },
+    "source": {
+      "connects_to": "M1__port__S",
+      "direction": "input",
+      "side": "left"
+    },
+    "vdd": {
+      "connects_to": [
+        "RD__port__T"
+      ],
+      "direction": "power",
+      "side": "top"
+    }
+  },
+  "net_positions": {
+    "internal": {
+      "out": {
+        "x": 173.42747160138984,
+        "y": 370.1856860637671,
+        "pinned": false
+      }
+    },
+    "external": {
+      "gate": {
+        "x": 96.55319427081236,
+        "y": 460.5686644781212,
+        "pinned": true
+      },
+      "source": {
+        "x": 171.5048371632878,
+        "y": 530.4216611953032,
+        "pinned": true
+      }
+    }
+  },
+  "macros": {},
+  "anchors": {},
+  "bands": []
+}

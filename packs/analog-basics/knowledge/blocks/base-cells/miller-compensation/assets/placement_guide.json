@@ -1,0 +1,220 @@
+{
+  "schema_version": "2.0",
+  "cell_name": "miller-compensation-cell",
+  "description": "User-edited placement for miller-compensation-cell",
+  "grid_size": {
+    "cols": 10,
+    "rows": 8
+  },
+  "placements": {
+    "CCOMP": {
+      "type": "capacitor",
+      "col": 4,
+      "row": 2,
+      "orientation": "R270",
+      "flip_h": false
+    },
+    "CL": {
+      "type": "capacitor",
+      "col": 8,
+      "row": 3,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "M1": {
+      "type": "nmos",
+      "col": 0,
+      "row": 3,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "M2": {
+      "type": "nmos",
+      "col": 3,
+      "row": 3,
+      "orientation": "normal",
+      "flip_h": true
+    },
+    "M3": {
+      "type": "pmos",
+      "col": 0,
+      "row": 0,
+      "orientation": "normal",
+      "flip_h": true
+    },
+    "M4": {
+      "type": "pmos",
+      "col": 2,
+      "row": 0,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "M6": {
+      "type": "nmos",
+      "col": 6,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "M7": {
+      "type": "pmos",
+      "col": 6,
+      "row": 0,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "MBIAS": {
+      "type": "nmos",
+      "col": 0,
+      "row": 5,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "MPB": {
+      "type": "pmos",
+      "col": 5,
+      "row": 0,
+      "orientation": "normal",
+      "flip_h": true
+    },
+    "MTAIL": {
+      "type": "nmos",
+      "col": 1,
+      "row": 5,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "RZ": {
+      "type": "resistor",
+      "col": 5,
+      "row": 2,
+      "orientation": "R270",
+      "flip_h": false
+    }
+  },
+  "internal_nets": {
+    "comp_mid": [
+      "CCOMP__port__B",
+      "RZ__port__T"
+    ],
+    "nbias": [
+      "MBIAS__port__D",
+      "MBIAS__port__G",
+      "MTAIL__port__G"
+    ],
+    "out1": [
+      "M1__port__D",
+      "M3__port__G",
+      "M3__port__D",
+      "M4__port__G"
+    ],
+    "out2": [
+      "M2__port__D",
+      "M4__port__D",
+      "M6__port__G",
+      "CCOMP__port__T"
+    ],
+    "pbias": [
+      "M7__port__G",
+      "MPB__port__G",
+      "MPB__port__D"
+    ],
+    "tail": [
+      "MTAIL__port__D",
+      "M1__port__S",
+      "M2__port__S"
+    ],
+    "vout": [
+      "M6__port__D",
+      "M7__port__D",
+      "RZ__port__B",
+      "CL__port__T"
+    ]
+  },
+  "external_ports": {
+    "inn": {
+      "connects_to": "M2__port__G",
+      "direction": "input",
+      "side": "right"
+    },
+    "inp": {
+      "connects_to": "M1__port__G",
+      "direction": "input",
+      "side": "left"
+    },
+    "vdd": {
+      "connects_to": [
+        "M3__port__S",
+        "M4__port__S",
+        "M7__port__S",
+        "MPB__port__S"
+      ],
+      "direction": "power",
+      "side": "top"
+    },
+    "vss": {
+      "connects_to": [
+        "MBIAS__port__S",
+        "MTAIL__port__S",
+        "M6__port__S",
+        "CL__port__B"
+      ],
+      "direction": "power",
+      "side": "bottom"
+    }
+  },
+  "net_positions": {
+    "internal": {
+      "comp_mid": {
+        "x": 444,
+        "y": 268,
+        "pinned": false
+      },
+      "nbias": {
+        "x": 3.5854338434485515,
+        "y": 379.02514831047637,
+        "pinned": true
+      },
+      "out1": {
+        "x": 115.72050354431857,
+        "y": 145.4018376499754,
+        "pinned": false
+      },
+      "out2": {
+        "x": 332.9206916564694,
+        "y": 264.6590941938015,
+        "pinned": true
+      },
+      "pbias": {
+        "x": 517.3700670625389,
+        "y": 204.8085081782593,
+        "pinned": true
+      },
+      "tail": {
+        "x": 194.6744031260208,
+        "y": 432.3249505631746,
+        "pinned": false
+      },
+      "vout": {
+        "x": 608.5,
+        "y": 284.5,
+        "pinned": false
+      }
+    },
+    "external": {
+      "inn": {
+        "x": 311.34041384673174,
+        "y": 340.53966139812854,
+        "pinned": true
+      },
+      "inp": {
+        "x": 60.73309215228323,
+        "y": 345.00193893241396,
+        "pinned": true
+      }
+    }
+  },
+  "macros": {},
+  "anchors": {},
+  "bands": []
+}

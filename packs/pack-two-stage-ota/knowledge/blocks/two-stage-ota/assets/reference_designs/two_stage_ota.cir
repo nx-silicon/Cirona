@@ -1,0 +1,66 @@
+* Two-Stage Miller Compensated OTA
+* PMOS-input first stage + NMOS second stage + series Rz/Cc
+*
+* Topology:
+*
+*        VDD ----------+------------+-----------+
+*                     |            |           |
+*                  MPBIAS        MPTAIL       MP6
+*                 (diode)       (tail)     (CS load)
+*                  G=vbp         G=vbp       G=vbp
+*                     |            |           |
+*                    vbp         ntail        vout
+*                     |            |           |
+*                  MNSINKP      MP1   MP2      |
+*                  (mirror)    (diff pair)    MN6
+*                  G=ibias    G=vinp G=vinn  (CS amp)
+*                     |         |      |     G=vx
+*                    VSS      vx_l    vx      |
+*                              |      |      VSS
+*                           MN3(d)   MN4
+*                          (mirror load)
+*                              |      |
+*                             VSS    VSS
+*
+*   Miller compensation: vx -- RZ1 -- ncc -- CC1 -- vout
+
+.param W_DIFF   = 20u
+.param L_DIFF   = 0.5u
+.param W_LOAD   = 10u
+.param L_LOAD   = 1u
+.param W_BIAS_N = 5u
+.param L_BIAS_N = 1u
+.param W_BIAS_P = 10u
+.param L_BIAS_P = 1u
+.param W_TAIL   = 20u
+.param L_TAIL   = 0.5u
+.param W_STAGE2_N = 50u
+.param L_STAGE2_N = 0.5u
+.param W_STAGE2_P = 100u
+.param L_STAGE2_P = 0.5u
+.param CCOMP = 1.5p
+.param RZ = 2k
+
+.subckt two_stage_ota_se vinp vinn vout ibias vdd vss
+
+* Bias generation
+MNBIAS  ibias ibias vss vss nch W=W_BIAS_N L=L_BIAS_N
+MNSINKP vbp   ibias vss vss nch W=W_BIAS_N L=L_BIAS_N
+MPBIAS  vbp   vbp   vdd vdd pch W=W_BIAS_P L=L_BIAS_P
+
+* First stage: PMOS input pair with NMOS mirror load
+MPTAIL ntail vbp  vdd vdd pch W=W_TAIL L=L_TAIL
+MP1    vx_l  vinp ntail vdd pch W=W_DIFF L=L_DIFF
+MP2    vx    vinn ntail vdd pch W=W_DIFF L=L_DIFF
+MN3    vx_l  vx_l vss   vss nch W=W_LOAD L=L_LOAD
+MN4    vx    vx_l vss   vss nch W=W_LOAD L=L_LOAD
+
+* Second stage: NMOS common-source
+MN6    vout vx   vss vss nch W=W_STAGE2_N L=L_STAGE2_N
+MP6    vout vbp  vdd vdd pch W=W_STAGE2_P L=L_STAGE2_P
+
+* Miller compensation
+RZ1    vx   ncc  RZ
+CC1    ncc  vout CCOMP
+
+.ends two_stage_ota_se

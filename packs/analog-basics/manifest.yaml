@@ -1,0 +1,60 @@
+# analog-basics — V4 foundation Pack（locked default）
+# 14 个 base-cell 是任何模拟电路的元件字典 — 该 PACK 锁定常驻装载，
+# 用户不可取消勾选。skill / tool 由 SkillLoader / ToolLoader 直接扫
+# backend/skills/ + backend/tools/，不通过 PACK manifest contributes。
+
+name: analog-basics
+version: 1.0.0
+manifest_schema_version: v4-1.1
+tier: 1                                  # Knowledge-only
+
+description: |
+  Analog Basics — 14 个普适 base-cell 元件字典（active-load / cascode /
+  current-mirror / differential-pair / miller-compensation / ...）。
+  任何电路 PACK 的设计都依赖这些基础 cell，因此本 PACK 锁定默认装载。
+
+author: cirona team
+license: MIT
+
+contributes:
+  knowledge:
+    - knowledge/blocks/base-cells/active-load
+    - knowledge/blocks/base-cells/bias-generator
+    - knowledge/blocks/base-cells/cascode
+    - knowledge/blocks/base-cells/cmfb
+    - knowledge/blocks/base-cells/common-gate-stage
+    - knowledge/blocks/base-cells/common-source
+    - knowledge/blocks/base-cells/comparator-latch
+    - knowledge/blocks/base-cells/current-mirror
+    - knowledge/blocks/base-cells/differential-pair
+    - knowledge/blocks/base-cells/miller-compensation
+    - knowledge/blocks/base-cells/output-stage
+    - knowledge/blocks/base-cells/resistive-load
+    - knowledge/blocks/base-cells/source-follower
+    - knowledge/blocks/base-cells/switch
+
+requires:
+  cirona: ">=4.0.0,<5.0.0"
+
+depends_on: []
+
+activation:
+  keywords:
+    - base cell
+    - 基础元件
+    - current mirror
+    - 电流镜
+    - differential pair
+    - 差分对
+    - cascode
+    - cmfb
+  user_says: []
+
+metadata:
+  category: foundation
+  status: stable
+  display_name: Analog Basics
+  locked: true                           # 锁定默认装载，UI 不可取消勾选
+  tags:
+    - foundation
+    - base-cells

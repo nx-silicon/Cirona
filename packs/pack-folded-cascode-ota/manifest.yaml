@@ -1,0 +1,44 @@
+# pack-folded-cascode-ota — Folded-Cascode OTA PACK
+
+name: pack-folded-cascode-ota
+version: 1.0.0
+manifest_schema_version: v4-1.1
+tier: 1
+
+description: |
+  Folded-Cascode OTA 设计知识包：rail-to-rail input + cascode 高输出
+  阻抗、PMOS / NMOS 输入对的 ICMR / 噪声取舍、bias tree 4 + cascode
+  bias、CMFB（continuous-time / SC）、PSRR、frequency compensation
+  failure playbook。
+
+author: cirona team
+license: MIT
+
+contributes:
+  knowledge:
+    - knowledge/blocks/folded-cascode-ota
+
+requires:
+  cirona: ">=4.0.0,<5.0.0"
+
+depends_on: []
+
+activation:
+  keywords:
+    - folded cascode
+    - FC-OTA
+    - folded-cascode OTA
+    - 折叠共源共栅
+  user_says:
+    - 设计 FC-OTA
+    - 设计 folded cascode OTA
+    - 折叠 cascode 运放
+
+metadata:
+  category: ota
+  status: stable
+  display_name: Folded-Cascode OTA
+  tags:
+    - ota
+    - cascode
+    - single-stage

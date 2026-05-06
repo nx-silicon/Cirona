@@ -1,0 +1,104 @@
+{
+  "schema_version": "2.0",
+  "cell_name": "sampling-switch",
+  "description": "User-edited placement for sampling-switch",
+  "grid_size": {
+    "cols": 10,
+    "rows": 8
+  },
+  "placements": {
+    "CS": {
+      "type": "capacitor",
+      "col": 4,
+      "row": 2,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "MN": {
+      "type": "nmos",
+      "col": 2,
+      "row": 2,
+      "orientation": "R270",
+      "flip_h": false
+    },
+    "MP": {
+      "type": "pmos",
+      "col": 2,
+      "row": 0,
+      "orientation": "R90",
+      "flip_h": false
+    }
+  },
+  "internal_nets": {
+    "hold": [
+      "MN__port__S",
+      "MP__port__S",
+      "CS__port__T"
+    ],
+    "vin": [
+      "MN__port__D",
+      "MP__port__D"
+    ]
+  },
+  "external_ports": {
+    "clk": {
+      "connects_to": "MN__port__G",
+      "direction": "input",
+      "side": "left"
+    },
+    "clkb": {
+      "connects_to": "MP__port__G",
+      "direction": "input",
+      "side": "left"
+    },
+    "vin": {
+      "connects_to": [
+        "MN__port__D",
+        "MP__port__D"
+      ],
+      "direction": "input",
+      "side": "right"
+    },
+    "vss": {
+      "connects_to": [
+        "CS__port__B"
+      ],
+      "direction": "power",
+      "side": "bottom"
+    }
+  },
+  "net_positions": {
+    "internal": {
+      "hold": {
+        "x": 366.40489429928596,
+        "y": 189.7292118181452,
+        "pinned": true
+      },
+      "vin": {
+        "x": 147.6740823188839,
+        "y": 137.0009757847357,
+        "pinned": true
+      }
+    },
+    "external": {
+      "clk": {
+        "x": 173.5841383167685,
+        "y": 271.2263138777785,
+        "pinned": true
+      },
+      "clkb": {
+        "x": 254.2707881818549,
+        "y": 46.67892202410846,
+        "pinned": true
+      },
+      "vin": {
+        "x": 148.84913061788995,
+        "y": 138.95938961641264,
+        "pinned": true
+      }
+    }
+  },
+  "macros": {},
+  "anchors": {},
+  "bands": []
+}

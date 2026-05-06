@@ -1,0 +1,162 @@
+* ==================================================================
+* LDO Topology A: 5T-OTA EA + PMOS-CS Second Stage + PMOS Pass + Miller
+* ==================================================================
+*
+* Topology summary:
+*   Stage 1 (EA core): 5T-OTA — NMOS diff pair + PMOS mirror load
+*                      Single-ended output v1 (high-Z mirror side)
+*   Stage 2: PMOS Common-Source amplifier (signal in = v1)
+*            + NMOS current-sink load (gate=ibias, fixed bias)
+*   Pass:    PMOS pass FET, gate driven by stage-2 output vg_pass
+*   Comp:    Miller Cc from vg_pass to vout
+*   Feedback: R1+R2 divider INSIDE subckt (vfb is internal node)
+*             → divider provides Ibleed = Vout/(R1+R2) — no M_bleed needed.
+*
+* WHY divider in subckt (LDO IRON LAW per user feedback v3):
+*   Any LDO MUST have R1+R2 divider as part of the LDO subckt itself,
+*   not in the testbench. The divider serves dual purpose:
+*     1. Set Vout ratio: Vout = Vref × (R1+R2)/R2
+*     2. Provide Ibleed (always-on minimum load) = Vout/(R1+R2)
+*   When divider exists, NO separate M_bleed is needed. M_bleed is only
+*   for "capless / unity-feedback / divider-less" LDOs (rare).
+*
+*   DESIGN FLOW (must follow this order, not reverse!):
+*     Step 1: Choose Ibleed based on
+*             (a) Iq budget (e.g., total Iq < 100µA)
+*             (b) Light-load gm_pass requirement (pass FET not in cutoff
+*                 when Iload=0 → pass needs to source ≥ Ibleed)
+*             → typical Ibleed ∈ [10µA, 100µA]
+*     Step 2: R_total = R1 + R2 = Vout / Ibleed
+*     Step 3: R1:R2 ratio determined by Vfb/Vout:
+*             R2/(R1+R2) = Vfb/Vout = Vref/Vout → R1 = R_total × (1-Vref/Vout)
+*
+*   ❌ WRONG flow (do not do): pick R1=10k R2=30k arbitrarily, then
+*      compute Ibleed = Vout/40k = 30µA. This may not match power budget.
+*
+* ASCII topology:
+*
+*                              VDD
+*                +------+------+------+------+
+*                |      |      |      |      |
+*               [M3]  [M4]   [MP_cs]  [MP_pass]
+*               PMOS  PMOS    PMOS     PMOS
+*               diode mirror  CS       pass
+*               G=D=  G=      G=v1     G=vg_pass
+*               vea_l vea_l   S=vdd    S=vdd
+*               D=    D=v1    D=       D=vout
+*               vea_l |       vg_pass    |
+*                |    |        |         +-----------+
+*              vea_l  v1     vg_pass    vout         |
+*                |    |        |         |        (Cc to vout)
+*               [M1] [M2]   [MN_sink]   [R1] R1     |
+*               diff diff    NMOS        |          ===||===
+*               G=vref G=vfb G=ibias    vfb (internal feedback node)
+*               S=ntail      S=vss       |
+*               D=vea_l D=v1 D=vg_pass  [R2]
+*                +----+       (Mirror     |
+*                     |        Mbias)    vss
+*                   ntail
+*                     |
+*                   [M5]
+*                   tail mirror Mbias
+*                   G=ibias S=vss D=ntail
+*                     |
+*                    vss
+*
+*       Bias chain: external ibias → Mbias diode (NMOS) → mirror to
+*                   M5 (tail), MN_sink (stage-2 sink). All NMOS sinks
+*                   use W=W_bias L=L_bias, only `m` varies.
+*       Bleeder:    R1+R2 divider provides Ibleed = Vout/(R1+R2).
+*
+* EA polarity (loop sign analysis):
+*   Stage 1: vfb ↑ → M2.Id ↑ → v1 ↓ (M2 pulls v1 down)
+*   Stage 2: v1 ↓ → MP_cs.|Vsg| ↑ → vg_pass ↑
+*   Pass:    vg_pass ↑ → MP_pass.|Vsg| ↓ → vout ↓
+*   Loop:    vfb ↑ → vout ↓  ✓ NEGATIVE FEEDBACK
+*
+* Connection rules:
+*   - vref → M1 (diode side, vea_left)
+*   - vfb  → M2 (mirror output side, v1) — vfb is INTERNAL node from R1+R2
+*   - M3 diode-connected at vea_left
+*   - M4 mirror M3 (gate=vea_left)
+*   - MP_cs gate = v1 (NOT vea_left)
+*   - MN_sink gate = ibias (mirror Mbias, W=W_bias L=L_bias)
+*   - Cc between vg_pass ↔ vout (Miller across stage 2)
+*   - R1 between vout-vfb, R2 between vfb-vss
+*
+* ==================================================================
+* Sizing (vpdk180nm, ibias=5µA, Vref=0.9V, Vout=1.2V target)
+* ==================================================================
+*
+*   Bias scaling (mirror Mbias):
+*     I_Mbias    = 5µA   (NMOS reference)
+*     I_tail     = 10µA  (m_tail=2)
+*     I_stage2   = 40µA  (m_cs_n=8)
+*
+*   Divider (Ibleed → R_total → R1:R2 reverse-derived):
+*     Target Ibleed = 30µA (low-power, ~1× nominal Iq budget,
+*                            equivalent to "M_bleed m=6" in Mbias-mirror form)
+*     R_total = Vout/Ibleed = 1.2V / 30µA = 40kΩ
+*     R2/(R1+R2) = Vref/Vout = 0.9/1.2 = 0.75
+*     → R1 = 10kΩ, R2 = 30kΩ
+*
+*   Stage-1 5T-OTA (I_diff = 5µA each branch):
+*     M1/M2 W=4u L=1u  → vfb=0.9V, ntail≈0.4V (Vov_M5=0.15)
+*     M3/M4 W=2u L=1u  → vea_left ≈ 1.0V, v1 ≈ 1.0V
+*
+*   Stage-2 (I=40µA):
+*     MP_cs   W=8u L=0.5u → Vsg=Vdd-v1=0.8V → I=40µA in sat
+*     MN_sink W=W_bias L=L_bias m=8
+*
+*   Pass FET:
+*     MP_pass W=1400u L=0.5u m=1 (good for ~10-20mA; bigger m for >50mA)
+*
+*   Compensation:
+*     Cc = 10pF (Miller across stage 2)
+*
+* ==================================================================
+
+* NOTE: vfb is exposed as 6th port to allow AC loop-gain testing (Method C)
+* via external Rfb/Cfb/Vinj at vfb. In production (DC/PSRR/Tran/Line/Load reg)
+* tests, testbench leaves vfb dangling — internal R1+R2 divider drives it.
+
+.subckt ldo_5t_pmos_cs vdd vss vout ibias vref vfb
++ params:
++ W_diff=4u    L_diff=1u
++ W_load1=2u   L_load1=1u
++ W_bias=1u    L_bias=1u
++ W_cs_p=8u    L_cs_p=0.5u
++ W_pass=1400u L_pass=0.5u m_pass=2
++ R_R1=10k     R_R2=30k
++ Cc=10p
++ m_tail=2 m_cs_n=8
+
+* === Bias reference: external ibias → Mbias diode (NMOS) ===
+Mbias  ibias  ibias  vss  vss  nch  W={W_bias}  L={L_bias}  m=1
+
+* === EA Stage 1: 5T-OTA (NMOS diff pair + PMOS mirror load) ===
+*  vref → M1 (diode side); vfb (internal) → M2 (mirror output v1)
+M1   vea_left  vref      ntail  vss  nch  W={W_diff}   L={L_diff}   m=1
+M2   v1        vfb       ntail  vss  nch  W={W_diff}   L={L_diff}   m=1
+M3   vea_left  vea_left  vdd    vdd  pch  W={W_load1}  L={L_load1}  m=1
+M4   v1        vea_left  vdd    vdd  pch  W={W_load1}  L={L_load1}  m=1
+
+* M5 tail: mirror Mbias (W=W_bias L=L_bias only m varies)
+M5   ntail     ibias     vss    vss  nch  W={W_bias}   L={L_bias}   m={m_tail}
+
+* === EA Stage 2: PMOS-CS + NMOS current sink ===
+MP_cs    vg_pass  v1     vdd  vdd  pch  W={W_cs_p}  L={L_cs_p}  m=1
+MN_sink  vg_pass  ibias  vss  vss  nch  W={W_bias}  L={L_bias}  m={m_cs_n}
+
+* === PMOS pass FET ===
+MP_pass  vout  vg_pass  vdd  vdd  pch  W={W_pass}  L={L_pass}  m={m_pass}
+
+* === Miller compensation: Cc from vg_pass to vout ===
+Cc       vg_pass  vout  {Cc}
+
+* === Feedback divider (Ibleed-derived; provides minimum load) ===
+*  Ibleed = Vout/(R1+R2); Vfb = Vout × R2/(R1+R2) = Vref in regulation
+R1  vout  vfb  {R_R1}
+R2  vfb   vss  {R_R2}
+
+.ends ldo_5t_pmos_cs

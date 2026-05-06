@@ -1,0 +1,51 @@
+{
+  "cell_name": "sampling-switch",
+  "description": "Topology-aware placement for sampling-switch (simple_switch)",
+  "grid_size": {
+    "cols": 5,
+    "rows": 5
+  },
+  "placements": {
+    "MSW": {
+      "type": "nmos",
+      "col": 1,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "RSENSE": {
+      "type": "resistor",
+      "col": 4,
+      "row": 2,
+      "orientation": "normal",
+      "flip_h": false
+    }
+  },
+  "internal_nets": {
+    "out": [
+      "MSW__port__S",
+      "RSENSE__port__T"
+    ]
+  },
+  "external_ports": {
+    "vin": {
+      "connects_to": "MSW__port__D",
+      "direction": "input",
+      "side": "right"
+    },
+    "gate": {
+      "connects_to": "MSW__port__G",
+      "direction": "input",
+      "side": "left"
+    },
+    "vss": {
+      "connects_to": [
+        "RSENSE__port__B"
+      ],
+      "direction": "power",
+      "side": "bottom"
+    }
+  },
+  "macros": {},
+  "anchors": {}
+}

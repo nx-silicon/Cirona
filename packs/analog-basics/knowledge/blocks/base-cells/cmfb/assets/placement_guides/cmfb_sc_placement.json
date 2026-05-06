@@ -1,0 +1,135 @@
+{
+  "cell_name": "cmfb",
+  "description": "Topology-aware placement for cmfb (differential_pair)",
+  "grid_size": {
+    "cols": 9,
+    "rows": 2
+  },
+  "placements": {
+    "C1": {
+      "type": "capacitor",
+      "col": 4,
+      "row": 1,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "C2": {
+      "type": "capacitor",
+      "col": 6,
+      "row": 1,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "CH": {
+      "type": "capacitor",
+      "col": 8,
+      "row": 1,
+      "orientation": "normal",
+      "flip_h": false
+    }
+  },
+  "internal_nets": {
+    "vcmfb_ctrl": [
+      "C1__port__B",
+      "C2__port__B",
+      "CH__port__T"
+    ]
+  },
+  "external_ports": {
+    "cap1_bot": {
+      "connects_to": "C1__port__T",
+      "direction": "input",
+      "side": "left"
+    },
+    "cap2_bot": {
+      "connects_to": "C2__port__T",
+      "direction": "input",
+      "side": "left"
+    },
+    "vss": {
+      "connects_to": [
+        "CH__port__B"
+      ],
+      "direction": "power",
+      "side": "bottom"
+    }
+  },
+  "macros": {
+    "core": {
+      "type": "base_cell",
+      "cell_name": "cmfb",
+      "footprint": "differential-pair",
+      "template": "dual_device_horizontal_3col",
+      "origin": {
+        "col": 0,
+        "row": 0
+      },
+      "size": {
+        "cols": 3,
+        "rows": 2
+      },
+      "anchors": {
+        "vinp": {
+          "side": "left",
+          "offset": 0
+        },
+        "vinn": {
+          "side": "right",
+          "offset": 0
+        },
+        "tail": {
+          "side": "bottom",
+          "offset": 1
+        },
+        "outp": {
+          "side": "top",
+          "offset": 0
+        },
+        "outn": {
+          "side": "top",
+          "offset": 2
+        }
+      },
+      "bands": [
+        "signal",
+        "nmos"
+      ],
+      "symmetry": {
+        "type": "mirror-x",
+        "center_col": 1,
+        "center_gap": 1
+      },
+      "children": [
+        "C1",
+        "C2",
+        "CH"
+      ],
+      "hierarchy": {
+        "child_cell": "cmfb",
+        "child_view": "schematic"
+      }
+    }
+  },
+  "anchors": {
+    "vinp": {
+      "owner": "core",
+      "anchor": "vinp"
+    },
+    "vinn": {
+      "owner": "core",
+      "anchor": "vinn"
+    },
+    "tail": {
+      "owner": "core",
+      "anchor": "tail"
+    },
+    "outp": {
+      "owner": "core",
+      "anchor": "outp"
+    },
+    "outn": {
+      "owner": "core",
+      "anchor": "outn"
+    }
+  }
+}

@@ -1,0 +1,49 @@
+# pack-pdk-vpdk180nm — vpdk180nm 工艺 AI 提炼经验知识
+# 不是 PDK 物理文件 (.lib/.va 在 external_projects/analog-design-system/pdk/)，
+# 而是 AI 用过程中沉淀的工艺使用手册：模型名陷阱、Vth 典型值、corner
+# 选择、.lib 路径写法等。
+#
+# auto_activate_pdk: vpdk180nm —— PackLoader 看到项目的 acp-project.yaml::pdk
+# = vpdk180nm 时自动启用此 PACK；其它项目默认不启用，避免 agent 同时
+# 看到多套工艺知识打架（Iron Law 7 配合）。
+
+name: pack-pdk-vpdk180nm
+version: 1.0.0
+manifest_schema_version: v4-1.1
+tier: 1
+
+description: |
+  vpdk180nm 工艺使用经验包：核心器件模型名（nch/pch，**不是** nch_18）、
+  IO 器件 nch_33/pch_33、Vth0 典型值、可用 corner 列表、.lib 文件路径
+  与 corner section 用法。AI 在 180nm 项目中沉淀的设计参考。
+
+author: cirona team
+license: MIT
+
+contributes:
+  knowledge:
+    - knowledge/pdks/vpdk180nm
+
+requires:
+  cirona: ">=4.0.0,<5.0.0"
+
+depends_on: []
+
+activation:
+  keywords:
+    - vpdk180nm
+    - 180nm
+    - "0.18 um"
+  user_says: []
+
+metadata:
+  category: foundation
+  status: stable
+  display_name: vpdk180nm Reference
+  pdk_compatibility:
+    - vpdk180nm
+  auto_activate_pdk: vpdk180nm           # PackLoader 按项目 PDK 自动启用
+  tags:
+    - foundation
+    - pdk
+    - vpdk180nm

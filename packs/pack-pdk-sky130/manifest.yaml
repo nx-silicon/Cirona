@@ -1,0 +1,53 @@
+# pack-pdk-sky130 — SkyWater SKY130 工艺 AI 提炼经验知识
+# 不是 PDK 物理文件 (.spice 模型在 backend/pdk/sky130/)，而是 AI 用过程中
+# 沉淀的工艺使用手册：W/L 单位陷阱、X-prefix subckt 调用、corner 列表、
+# 5+ 种 Vth 变种器件等。
+#
+# auto_activate_pdk: sky130 —— PackLoader 看到项目的 acp-project.yaml::pdk
+# = sky130 时自动启用此 PACK；其它项目默认不启用，避免 agent 同时
+# 看到多套工艺知识打架（Iron Law 7 配合）。
+
+name: pack-pdk-sky130
+version: 1.0.0
+manifest_schema_version: v4-1.1
+tier: 1
+
+description: |
+  SkyWater SKY130 130nm 开源 PDK (Apache 2.0) 使用经验包：W/L 数值默认
+  µm 的 .option scale=1.0u 行为陷阱、X-prefix subckt 写法（不是 M）、
+  5 种 Vth 变种 (core / LVT / HVT) 模型名、5V IO 器件、corner 列表 +
+  mismatch 开关、binned 模型 (63 bins) 注意事项。AI 在 sky130 项目中
+  沉淀的设计参考。
+
+author: cirona team
+license: MIT
+
+contributes:
+  knowledge:
+    - knowledge/pdks/sky130
+
+requires:
+  cirona: ">=4.0.0,<5.0.0"
+
+depends_on: []
+
+activation:
+  keywords:
+    - sky130
+    - SkyWater
+    - 130nm
+    - "0.13 um"
+  user_says: []
+
+metadata:
+  category: foundation
+  status: stable
+  display_name: SKY130 Reference
+  pdk_compatibility:
+    - sky130
+  auto_activate_pdk: sky130            # PackLoader 按项目 PDK 自动启用
+  tags:
+    - foundation
+    - pdk
+    - sky130
+    - open-source

@@ -1,0 +1,321 @@
+* ==================================================================
+* Folded-Cascode OTA (NMOS-input, single-ended output)
+* 折叠共源共栅 OTA：NMOS 差分对输入，5 组核心器件拓扑
+* ==================================================================
+* Self-contained bias tree: only external ibias needed
+* Total MOSFETs: 20 (11 core + 9 bias tree)
+*   Core (11): MN1, MN2, MNtail,
+*              MP1_bottom, MP3_bottom, MP2_top, MP4_top,
+*              MN5_bottom, MN7_bottom, MN6_top, MN8_top
+*   Bias (9):  MMNbias, MMNfold_bias, MMN_vbcp_sink,
+*              MMPfold_bias, MMP_vbcp_1, MMP_vbcp_2,
+*              MMP_vbcn_src, MMN_vbcn_1, MMN_vbcn_2
+* ==================================================================
+*
+* 5-Group Core Topology / 5 组核心器件:
+*   Group 1: NMOS differential pair (MN1/MN2 + MNtail)
+*   Group 2: PMOS fold current source (MP1_bottom/MP3_bottom), G=vbias_fold
+*   Group 3: PMOS cascode (MP2_top/MP4_top), G=vbc_p
+*   Group 4: NMOS cascode (MN6_top/MN8_top), G=vbc_n
+*   Group 5: NMOS current mirror (MN5_bottom/MN7_bottom), G=vd_left
+*            (diff-to-single-ended conversion)
+*
+* ==================================================================
+* DC Current Paths (ALL paths from VDD to VSS):
+* ==================================================================
+*
+*   Path 1 - Left signal branch:
+*     VDD → MP1_bottom(S→D) → vmid_left1 → MP2_top(S→D) → vd_left
+*         → MN6_top(D→S) → vmid_left2 → MN5_bottom(D→S) → VSS
+*     KCL at vmid_left1: I(MP1_bottom) = I(MP2_top) + I(MN1)
+*
+*   Path 2 - Right signal branch (output):
+*     VDD → MP3_bottom(S→D) → vmid_right1 → MP4_top(S→D) → vout
+*         → MN8_top(D→S) → vmid_right2 → MN7_bottom(D→S) → VSS
+*     KCL at vmid_right1: I(MP3_bottom) = I(MP4_top) + I(MN2)
+*
+*   Path 3 - Differential pair tail:
+*     (from vmid_left1/vmid_right1 via MN1/MN2)
+*     → ntail → MNtail(D→S) → VSS
+*
+*   Path 4 - Bias reference:
+*     ibias → MMNbias(diode, D=G=ibias) → VSS
+*     MNtail mirrors ibias: Itail = ibias × (m_tail / m_bias)
+*
+*   Path 5 - vbias_fold generation:
+*     VDD → MMPfold_bias(diode, S→D) → vbias_fold
+*         → MMNfold_bias(D→S) → VSS
+*
+*   Path 6 - vbc_p generation (PMOS cascode gate bias):
+*     VDD → MMP_vbcp_1(S→D) → vbc_p_mid → MMP_vbcp_2(diode, S→D)
+*         → vbc_p → MMN_vbcp_sink(D→S) → VSS
+*     vbc_p = VDD - |Vgs_pcasc(MMP_vbcp_1)| - |Vds_pcasc(MMP_vbcp_2)|
+*
+*   Path 7 - vbc_n generation (NMOS cascode gate bias):
+*     VDD → MMP_vbcn_src(S→D) → vbc_n
+*         → MMN_vbcn_2(diode, D→S) → vbc_n_mid
+*         → MMN_vbcn_1(D→S) → VSS
+*     vbc_n = VSS + Vgs_ncasc(MMN_vbcn_2) + Vds_nmirror(MMN_vbcn_1)
+*
+* ==================================================================
+* AC Signal Flow (vinp > vinn):
+* ==================================================================
+*
+*   1. MN1 gm increases → ΔI flows up into vmid_left1
+*      MN2 gm decreases → ΔI less current from vmid_right1
+*
+*   2. At vmid_left1 (fold junction, left):
+*      MP1_bottom supplies constant I_fold (gate fixed at vbias_fold)
+*      Extra ΔI from MN1 is absorbed → vmid_left1 drops slightly
+*      MP2_top (cascode) passes signal current to vd_left
+*
+*   3. At vd_left:
+*      MN6_top (cascode) + MN5_bottom (diode-connected mirror master)
+*      vd_left drops → MN5_bottom gate drops → MN7_bottom gate drops
+*
+*   4. At vmid_right1 (fold junction, right):
+*      MP3_bottom supplies constant I_fold
+*      MN2 draws less current (−ΔI) → net upward current at vmid_right1
+*      MP4_top (cascode) passes signal to vout
+*
+*   5. At vout:
+*      MN7_bottom (mirror slave) current decreases (follows vd_left)
+*      MP4_top pushes more current down (from step 4)
+*      Net effect: vout rises by δVout = gm1 × Rout × δVid
+*
+*   Gain: Av = gm1 × Rout
+*     Rout = Rout_p || Rout_n
+*     Rout_p = gm_pcasc × ro_pfold × ro_pcasc  (PMOS cascode stack)
+*     Rout_n = gm_ncasc × ro_nmirror × ro_ncasc (NMOS cascode stack)
+*     Typical gain: 60-80 dB (true cascode output impedance)
+*
+*   GBW = gm1 / (2π × CL)
+*
+* ==================================================================
+* ASCII Schematic:
+* ==================================================================
+*
+*                                                VDD
+*                                                 |
+*                                    ┌────────────┼────────────┐
+*                                    |            |            |
+*                               MP1_bottom        |       MP3_bottom
+*                                (PMOS)           |        (PMOS)
+*                              G=vbias_fold       |      G=vbias_fold
+*                              S=VDD              |      S=VDD
+*                                    |            |            |
+*                               vmid_left1        |       vmid_right1
+*      ----------------------------- |            |            | ----------------------------
+*      |             ----------------------------------------- |                            |
+*     MN1         MN2           MP2_top           |        MP4_top                          |
+*    (NMOS)      (NMOS)          (PMOS)           |         (PMOS)                          |
+*    G=vinp      G=vinn          G=vbc_p          |         G=vbc_p                         |
+*    S=ntail     S=ntail         S=vmid_left1     |         S=vmid_right1                   |
+*      |            |                |            |              |                          |
+*      |            |             vd_left         |            vout                         |
+*      -------------                 |            |              |                          |
+*            |                   MN6_top          |          MN8_top                        |
+*            |                    (NMOS)          |           (NMOS)                        |
+*            |                  G=vbc_n           |         G=vbc_n                         |
+*            |                  S=vmid_left2      |         S=vmid_right2                   |
+*            |                       |            |              |                          |
+*            |                   MN5_bottom       |          MN7_bottom                     |
+*            |                    (NMOS)          |           (NMOS)                        |
+*            |                 G=vd_left          |        G=vd_left                        |
+*            |                  S=VSS             |         S=VSS                           |
+*            |                       |            |              |                          |
+*            |                       └────────────┼──────────────┘                          |
+*         MNtail                                 VSS                                        |
+*          (NMOS)                                                                           |
+*        G=ibias                                                                            |
+*        D=ntail                                                                            |
+*        S=VSS                                                                              |
+*                                                                                           |
+* Bias Tree (self-contained, generates 4 internal voltages):                                |
+*                                                                                           |
+*   ibias ──── MMNbias(diode, NMOS) ──── VSS          (reference)                          |
+*                                                                                           |
+*   vbias_fold: VDD ── MMPfold_bias(diode, PMOS, W_fold/L_fold) ── vbias_fold              |
+*                                          ── MMNfold_bias(NMOS mirror) ── VSS              |
+*                                                                                           |
+*   vbc_p:     VDD ── MMP_vbcp_1(PMOS, G=vbc_p) ── vbc_p_mid                              |
+*                  ── MMP_vbcp_2(diode, PMOS, G=D=vbc_p) ── vbc_p                          |
+*                                          ── MMN_vbcp_sink(NMOS mirror) ── VSS             |
+*                                                                                           |
+*   vbc_n:     VDD ── MMP_vbcn_src(PMOS, G=vbias_fold) ── vbc_n                            |
+*                  ── MMN_vbcn_2(diode, NMOS, G=D=vbc_n) ── vbc_n_mid                      |
+*                  ── MMN_vbcn_1(NMOS, G=vbc_n) ── VSS                                     |
+*
+* ==================================================================
+* Bias Tree Device Matching Rules / 偏置树器件匹配规则:
+*   MMPfold_bias  matches MP1_bottom/MP3_bottom (W_fold, L_fold)
+*   MMP_vbcp_1    padding device                 (W_pad_p, L_pad_p) — tunable for fold headroom
+*   MMP_vbcp_2    matches MP2_top/MP4_top       (W_pcasc, L_pcasc)
+*   MMN_vbcn_1    padding device                 (W_pad_n, L_pad_n) — tunable for mirror headroom
+*   MMN_vbcn_2    matches MN6_top/MN8_top       (W_ncasc, L_ncasc)
+*   MMP_vbcn_src  matches MP1_bottom/MP3_bottom (W_fold, L_fold) — same bias branch
+* ==================================================================
+*
+* Ports:
+*   vinp       [INPUT ] - 差分正输入 / non-inverting input
+*   vinn       [INPUT ] - 差分负输入 / inverting input
+*   vout       [OUTPUT] - 单端输出 / single-ended output
+*   ibias      [INPUT ] - 偏置电流输入 / external bias current
+*   vdd        [SUPPLY] - 正电源 / positive supply
+*   vss        [GROUND] - 地 / ground
+*
+* Internal bias nodes (generated by bias tree, 0 ideal sources):
+*   ibias      = NMOS diode (MMNbias) → MNtail gate
+*   vbias_fold = PMOS diode (MMPfold_bias) → MP1_bottom/MP3_bottom gate
+*   vbc_p      = PMOS wide-swing (padding + diode) → MP2_top/MP4_top gate
+*   vbc_n      = NMOS wide-swing (diode + padding) → MN6_top/MN8_top gate
+* ==================================================================
+
+* Parameters — Group 1: NMOS differential pair + tail
+.param W_diff    = 4.4u      $ differential pair (MN1, MN2)
+.param L_diff    = 1u
+.param m_diff    = 1
+.param m_tail    = 2      $ tail multiplier: Itail = ibias × (m_tail / m_bias)
+.param W_bias    = 3.3u      $ bias reference diode (MMNbias)
+.param L_bias    = 1u
+.param m_bias    = 1
+
+* Parameters — Group 2: PMOS fold current source (bottom)
+.param W_fold    = 24.7u      $ MP1_bottom, MP3_bottom
+.param L_fold    = 2u
+.param m_fold    = 2
+
+* Parameters — Group 3: PMOS cascode (top)
+.param W_pcasc   = 8.9u     $ MP2_top, MP4_top
+.param L_pcasc   = 2u
+.param m_pcasc   = 6
+
+* Parameters — Group 4: NMOS cascode (top)
+.param W_ncasc   = 9.1u     $ MN6_top, MN8_top
+.param L_ncasc   = 1u
+.param m_ncasc   = 1
+
+* Parameters — Group 5: NMOS current mirror (bottom)
+.param W_nmirror = 4.4u   $ MN5_bottom, MN7_bottom
+.param L_nmirror = 1u
+.param m_nmirror = 1
+
+* Parameters — Bias tree
+.param W_bp_ref  = 24.7u    $ PMOS bias ref for vbias_fold (MMPfold_bias, matches W_fold/L_fold)
+.param L_bp_ref  = 2u    $ (typically = L_fold)
+.param W_pad_p   = 1u     $ PMOS padding in vbc_p generator (MMP_vbcp_1)
+.param L_pad_p   = 2u
+.param m_pad_p   = 1
+.param W_pad_n   = 1u       $ NMOS padding in vbc_n generator (MMN_vbcn_1)
+.param L_pad_n   = 2u
+.param m_pad_n   = 1
+
+.subckt folded_cascode_ota vinp vinn vout ibias vdd vss
+
+    * =================================================================
+    * BIAS TREE (9 MOSFETs, generates 4 internal bias voltages)
+    * =================================================================
+
+    * === bias_nmos_reference (ibias diode + tail mirror) ===
+    * ibias → MMNbias(diode) → VSS
+    * MNtail mirrors ibias: Itail = ibias × (m_tail / m_bias)
+    MMNbias     ibias       ibias       vss  vss  nch W=W_bias L=L_bias m=m_bias
+    +           $ NMOS diode reference — sets gate voltage for all NMOS mirrors
+
+    * === bias_nmos_mirrors (current sinks for bias branches) ===
+    * MMNfold_bias: sinks current for vbias_fold generation branch
+    * MMN_vbcp_sink: sinks current for vbc_p generation branch
+    MMNfold_bias  vbias_fold  ibias       vss  vss  nch W=W_bias L=L_bias m=m_bias
+    +             $ NMOS mirror — sinks I_bias for vbias_fold PMOS diode
+    MMN_vbcp_sink vbc_p       ibias       vss  vss  nch W=W_bias L=L_bias m=m_bias
+    +             $ NMOS mirror — sinks I_bias for vbc_p wide-swing PMOS bias
+
+    * === vbias_fold generator (PMOS fold gate bias) ===
+    * Path: VDD → MMPfold_bias(diode, S→D) → vbias_fold → MMNfold_bias(D→S) → VSS
+    * MMPfold_bias: diode-connected PMOS, matches MP1_bottom/MP3_bottom (W_fold, L_fold)
+    * vbias_fold = VDD - |Vgs_fold|
+    MMPfold_bias  vbias_fold  vbias_fold  vdd  vdd  pch W=W_fold L=L_fold m=m_bias
+    +             $ PMOS diode — matches fold devices, generates vbias_fold
+
+    * === vbc_p generator (PMOS cascode gate bias, wide-swing: padding + diode) ===
+    * Bias scheme: wide-swing Bias 1 style (see wide-swing-current-mirror/design_rules.md)
+    * Path: VDD → MMP_vbcp_1(padding, G=vbc_p, triode) → vbc_p_mid
+    *           → MMP_vbcp_2(diode, G=D=vbc_p) → vbc_p → MMN_vbcp_sink(D→S) → VSS
+    * MMP_vbcp_1: padding device (G=vbc_p, triode region), W_pad_p/L_pad_p tunable
+    *   Vds(MMP_vbcp_1) controls fold source headroom via vbc_p
+    * MMP_vbcp_2: diode-connected (G=D=vbc_p), matches MP2_top/MP4_top (W_pcasc, L_pcasc)
+    * vbc_p = VDD - |Vds(MMP_vbcp_1)| - |Vgs(MMP_vbcp_2)|
+    MMP_vbcp_1    vbc_p_mid   vbc_p       vdd  vdd  pch W=W_pad_p L=L_pad_p m=m_pad_p
+    +             $ PMOS padding — G=vbc_p, Vds tunable via L_pad_p
+    MMP_vbcp_2    vbc_p       vbc_p       vbc_p_mid  vdd  pch W=W_pcasc L=L_pcasc m=m_bias
+    +             $ PMOS diode — matches pcasc devices, G=D=vbc_p
+
+    * === vbc_n generator (NMOS cascode gate bias, wide-swing: diode + padding) ===
+    * Bias scheme: wide-swing Bias 1 style (see wide-swing-current-mirror/design_rules.md)
+    * Path: VDD → MMP_vbcn_src(S→D) → vbc_n
+    *           → MMN_vbcn_2(diode, D=G=vbc_n) → vbc_n_mid
+    *           → MMN_vbcn_1(padding, G=vbc_n, triode) → VSS
+    * MMP_vbcn_src: PMOS current source, gate=vbias_fold (reuses fold bias)
+    *   matches MP1_bottom/MP3_bottom (W_fold, L_fold) — same bias branch
+    * MMN_vbcn_2: diode-connected (G=D=vbc_n), matches MN6_top/MN8_top (W_ncasc, L_ncasc)
+    * MMN_vbcn_1: padding device (G=vbc_n, triode region), W_pad_n/L_pad_n tunable
+    *   Vds(MMN_vbcn_1) directly sets MN5_bottom Vds headroom
+    * vbc_n = Vgs(MMN_vbcn_2) + Vds(MMN_vbcn_1) ≈ (Vth + Vov) + Vov_pad
+    * → MN5_bottom Vds ≈ Vov_pad → wide-swing: Vout_min ≈ 2·Vov
+    MMP_vbcn_src  vbc_n       vbias_fold  vdd  vdd  pch W=W_fold L=L_fold m=m_bias
+    +             $ PMOS source — matches fold devices, G=vbias_fold
+    MMN_vbcn_2    vbc_n       vbc_n       vbc_n_mid  vss  nch W=W_ncasc L=L_ncasc m=m_bias
+    +             $ NMOS diode — matches ncasc devices, G=D=vbc_n
+    MMN_vbcn_1    vbc_n_mid   vbc_n       vss  vss  nch W=W_pad_n L=L_pad_n m=m_pad_n
+    +             $ NMOS padding — G=vbc_n (triode), Vds tunable via W_pad_n/L_pad_n
+
+    * =================================================================
+    * CORE OTA (11 MOSFETs)
+    * =================================================================
+
+    * === Group 1: differential_pair (NMOS, MN1/MN2 + MNtail) ===
+    * vinp/vinn → gm → signal current into fold junctions
+    * Each branch quiescent current = Itail / 2
+    MN1         vmid_left1   vinp        ntail  vss  nch W=W_diff L=L_diff m=m_diff
+    +           $ diff pair left — G=vinp, signal current to vmid_left1
+    MN2         vmid_right1  vinn        ntail  vss  nch W=W_diff L=L_diff m=m_diff
+    +           $ diff pair right — G=vinn, signal current to vmid_right1
+    MNtail      ntail        ibias       vss    vss  nch W=W_bias L=L_bias m=m_tail
+    +           $ tail current source — mirrors ibias, Itail = ibias × (m_tail/m_bias)
+
+    * === Group 2: PMOS fold current source (bottom, MP1_bottom/MP3_bottom) ===
+    * Constant current from VDD, gate = vbias_fold (set by bias tree)
+    * I_fold = I_bias × (m_fold / m_bias) per branch
+    * KCL at fold junction: I_fold = I_cascode + I_diff_branch
+    MP1_bottom  vmid_left1   vbias_fold  vdd    vdd  pch W=W_fold L=L_fold m=m_fold
+    +           $ left fold source — constant current to vmid_left1
+    MP3_bottom  vmid_right1  vbias_fold  vdd    vdd  pch W=W_fold L=L_fold m=m_fold
+    +           $ right fold source — constant current to vmid_right1
+
+    * === Group 3: PMOS cascode (top, MP2_top/MP4_top) ===
+    * Shields fold source output, boosts output impedance
+    * Gate = vbc_p (set by bias tree for proper Vds headroom)
+    MP2_top     vd_left      vbc_p       vmid_left1   vdd  pch W=W_pcasc L=L_pcasc m=m_pcasc
+    +           $ left PMOS cascode — signal to vd_left (mirror master node)
+    MP4_top     vout         vbc_p       vmid_right1  vdd  pch W=W_pcasc L=L_pcasc m=m_pcasc
+    +           $ right PMOS cascode — signal to vout (output node)
+
+    * === Group 5: NMOS current mirror (bottom, MN5_bottom/MN7_bottom) ===
+    * MN5_bottom: mirror master, diode-connected (G=vd_left)
+    *   Sets reference current; vd_left is the high-impedance output of MN6_top
+    * MN7_bottom: mirror slave (G=vd_left), implements diff→single-ended conversion
+    *   MN7_bottom mirrors MN5_bottom current; vout rises when MN7 current decreases
+    MN5_bottom  vmid_left2   vd_left  vss    vss  nch W=W_nmirror L=L_nmirror m=m_nmirror
+    +           $ left mirror master — diode-connected D=vmid_left2 G=vd_left
+    MN7_bottom  vmid_right2  vd_left  vss    vss  nch W=W_nmirror L=L_nmirror m=m_nmirror
+    +           $ right mirror slave — G=vd_left, diff→single conversion
+
+    * === Group 4: NMOS cascode (top, MN6_top/MN8_top) ===
+    * Shields mirror output, boosts output impedance
+    * Gate = vbc_n (set by bias tree for proper Vds headroom)
+    MN6_top     vd_left      vbc_n       vmid_left2   vss  nch W=W_ncasc L=L_ncasc m=m_ncasc
+    +           $ left NMOS cascode — connects to vd_left
+    MN8_top     vout         vbc_n       vmid_right2  vss  nch W=W_ncasc L=L_ncasc m=m_ncasc
+    +           $ right NMOS cascode — connects to vout (output node)
+
+.ends folded_cascode_ota

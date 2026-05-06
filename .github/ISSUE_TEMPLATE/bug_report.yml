@@ -1,0 +1,120 @@
+name: 🐛 Bug Report / Bug 报告
+description: Report a reproducible bug in Cirona / 报告 Cirona 的可复现 bug
+title: "[Bug] "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report. The more detail you provide,
+        the faster we can fix it.
+
+        感谢报告 bug。越详细的信息越能帮我们快速定位和修复问题。
+
+  - type: input
+    id: cirona-version
+    attributes:
+      label: Cirona version / Cirona 版本
+      description: Find it on the welcome screen, in the title bar, or by clicking the Cirona logo. / 在欢迎页、标题栏，或点击 Cirona 图标可查看。
+      placeholder: e.g. 1.0.0-rc9.20
+    validations:
+      required: true
+
+  - type: dropdown
+    id: os
+    attributes:
+      label: Operating System / 操作系统
+      options:
+        - Windows 11
+        - Windows 10
+        - Other (please describe below) / 其他（请在下方描述中说明）
+    validations:
+      required: true
+
+  - type: input
+    id: python-version
+    attributes:
+      label: Python version / Python 版本
+      description: Run `python --version` in a command prompt. / 命令行运行 `python --version` 查看。
+      placeholder: e.g. 3.12.4
+    validations:
+      required: true
+
+  - type: dropdown
+    id: provider
+    attributes:
+      label: LLM Provider in use / 使用的 LLM 提供方
+      description: Select all that apply. / 可多选。
+      multiple: true
+      options:
+        - Anthropic Claude
+        - OpenAI
+        - DeepSeek
+        - Gemini
+        - Kimi
+        - MiniMax
+        - GLM
+        - Other / 其他
+        - Not applicable (bug not LLM-related) / 与 LLM 无关
+    validations:
+      required: true
+
+  - type: textarea
+    id: description
+    attributes:
+      label: Bug description / Bug 描述
+      description: A clear and concise description of what the bug is. / 简明扼要描述这个 bug。
+    validations:
+      required: true
+
+  - type: textarea
+    id: reproduce
+    attributes:
+      label: Steps to reproduce / 复现步骤
+      description: Walk us through how to trigger the bug, step by step. / 一步步说明如何触发这个 bug。
+      placeholder: |
+        1. Open Cirona and select project ...
+        2. Click ...
+        3. Type "..." in the chat panel
+        4. See error / 看到报错
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: Expected behaviour / 期望行为
+      description: What did you think should happen? / 你认为应该发生什么？
+
+  - type: textarea
+    id: actual
+    attributes:
+      label: Actual behaviour / 实际行为
+      description: What actually happened? Paste error messages here. / 实际发生了什么？把报错信息贴在这里。
+    validations:
+      required: true
+
+  - type: textarea
+    id: log
+    attributes:
+      label: Frontend log / 前端日志
+      description: |
+        Paste the last ~100 lines of `<data-dir>\.cirona\logs\frontend.log`. The data directory is what you picked during the first-run wizard (typically `D:\Cirona`).
+        贴 `<数据目录>\.cirona\logs\frontend.log` 最后 ~100 行。数据目录是你在首次启动向导里选的位置（通常是 `D:\Cirona`）。
+      render: shell
+
+  - type: textarea
+    id: screenshots
+    attributes:
+      label: Screenshots / 截图
+      description: Drag and drop images directly into this field. / 把图片直接拖进这个输入框即可。
+
+  - type: checkboxes
+    id: terms
+    attributes:
+      label: Pre-flight checks / 提交前确认
+      options:
+        - label: I searched existing issues and didn't find a duplicate. / 我已搜索过已有 issue，没有发现重复。
+          required: true
+        - label: I tried restarting Cirona and the bug still happens. / 我已尝试重启 Cirona，问题仍然存在。
+          required: false

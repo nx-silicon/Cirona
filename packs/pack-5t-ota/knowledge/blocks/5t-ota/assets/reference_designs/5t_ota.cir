@@ -1,0 +1,147 @@
+* ==================================================================
+* Five-Transistor OTA (5T-OTA)
+* NMOS differential input pair, PMOS current-mirror load,
+* NMOS tail current source. Single-ended output.
+* ==================================================================
+* Self-contained bias: only external ibias needed (NMOS diode clamp).
+* Total MOSFETs: 5 core + 1 bias diode = 6
+*   Core (5): M1, M2 (diff pair), M3, M4 (PMOS mirror), M5 (tail)
+*   Bias (1): Mbias (NMOS diode reference)
+* ==================================================================
+*
+* Topology:
+*
+*               vdd
+*                |
+*           +----+----+
+*           |         |
+*       [M3]         [M4]   PMOS mirror (M3 diode-connected)
+*       D=vd_l       D=out
+*       G=vd_l       G=vd_l
+*       S=vdd        S=vdd
+*           |         |
+*          vd_l      out
+*           |         |
+*       [M1]         [M2]   NMOS input pair
+*       G=inp        G=inn
+*       D=vd_l       D=out
+*       S=tail       S=tail
+*           |         |
+*           +----+----+
+*                |
+*               tail
+*                |
+*              [M5]         NMOS tail current source
+*           G=ibias
+*           D=tail
+*           S=vss
+*                |
+*               vss
+*
+* ==================================================================
+* DC Current Paths (ALL paths from VDD to VSS):
+* ==================================================================
+*
+*   Path 1 - Left branch (mirror master):
+*     VDD -> M3(S->D) -> vd_l -> M1(D->S) -> tail -> M5(D->S) -> VSS
+*     M3 is diode-connected (G=D=vd_l), sets mirror reference.
+*     I_M3 = I_M1 = Itail / 2 (at balanced input).
+*
+*   Path 2 - Right branch (output):
+*     VDD -> M4(S->D) -> out -> M2(D->S) -> tail -> M5(D->S) -> VSS
+*     M4 mirrors M3 current. I_M4 = I_M2 = Itail / 2.
+*
+*   Path 3 - Bias reference:
+*     ibias -> Mbias(diode, D=G=ibias) -> VSS
+*     M5 mirrors ibias: Itail = ibias * (m_tail / m_bias).
+*
+* ==================================================================
+* AC Signal Flow (vinp > vinn):
+* ==================================================================
+*
+*   1. M1 gm increases -> more current through M1 -> vd_l drops
+*      M2 gm decreases -> less current through M2
+*
+*   2. M3 (diode) adjusts to sink M1's increased current:
+*      vd_l drops -> M3 Vgs decreases -> I_M3 tracks I_M1
+*
+*   3. M4 (mirror) copies M3 current change:
+*      M4 gate = vd_l (drops) -> I_M4 decreases
+*
+*   4. At output node:
+*      M2 draws less current (gm decrease)
+*      M4 pushes less current (mirror tracks M3)
+*      But M2's current decrease > M4's decrease (diff gain)
+*      Net effect: vout rises.
+*
+*   Gain: Av = gm_M1 * (ro_M2 || ro_M4)
+*     Typical: 40-55 dB (no cascode boosting)
+*
+*   GBW = gm_M1 / (2*pi * CL)
+*
+* ==================================================================
+* Ports:
+*   inp        [INPUT ] - non-inverting input
+*   inn        [INPUT ] - inverting input
+*   ibias      [INPUT ] - external bias current
+*   out        [OUTPUT] - single-ended output
+*   vdd        [SUPPLY] - positive supply
+*   vss        [GROUND] - ground
+*
+* Internal nodes:
+*   vd_l       - left branch drain (M3 diode, M1 drain)
+*   tail       - diff pair tail node (M5 drain)
+* ==================================================================
+
+* ---- Parameters (modify these for sizing) ----
+.param W_DIFF  = 10u       $ differential pair (M1, M2)
+.param L_DIFF  = 0.5u
+.param m_diff  = 1
+.param W_LOAD  = 10u       $ PMOS mirror load (M3, M4)
+.param L_LOAD  = 0.5u
+.param m_load  = 1
+.param W_TAIL  = 20u       $ NMOS tail current source (M5)
+.param L_TAIL  = 0.5u
+.param m_tail  = 2         $ Itail = ibias * (m_tail / m_bias)
+.param W_BIAS  = 10u       $ NMOS bias diode (Mbias)
+.param L_BIAS  = 0.5u
+.param m_bias  = 1
+
+.subckt five_transistor_ota inp inn ibias out vdd vss
+
+    * =================================================================
+    * BIAS (1 MOSFET: NMOS diode reference)
+    * =================================================================
+
+    * Mbias -- NMOS diode reference, sets gate voltage for M5
+    Mbias   ibias   ibias   vss  vss  nch W=W_BIAS L=L_BIAS m=m_bias
+    +       $ NMOS diode reference -- sets ibias node voltage
+
+    * =================================================================
+    * CORE OTA (5 MOSFETs)
+    * =================================================================
+
+    * --- PMOS current-mirror load (M3 diode, M4 mirror) ---
+    * M3 -- diode-connected PMOS load (left branch, mirror master)
+    M3  vd_l  vd_l  vdd  vdd  pch W=W_LOAD L=L_LOAD m=m_load
+    +   $ PMOS mirror master -- diode-connected, G=D=vd_l
+
+    * M4 -- PMOS mirror load (right branch, output node)
+    M4  out   vd_l  vdd  vdd  pch W=W_LOAD L=L_LOAD m=m_load
+    +   $ PMOS mirror slave -- G=vd_l, diff-to-single conversion
+
+    * --- NMOS differential input pair (M1, M2) ---
+    * M1 -- NMOS input (positive, non-inverting)
+    M1  vd_l  inp   tail  vss  nch W=W_DIFF L=L_DIFF m=m_diff
+    +   $ diff pair left -- G=inp, current to vd_l
+
+    * M2 -- NMOS input (negative, inverting)
+    M2  out   inn   tail  vss  nch W=W_DIFF L=L_DIFF m=m_diff
+    +   $ diff pair right -- G=inn, current to out
+
+    * --- NMOS tail current source (M5) ---
+    * M5 mirrors ibias: Itail = ibias * (m_tail / m_bias)
+    M5  tail  ibias  vss  vss  nch W=W_BIAS L=L_BIAS m=m_tail
+    +   $ tail current source -- mirrors ibias, G=ibias
+
+.ends five_transistor_ota

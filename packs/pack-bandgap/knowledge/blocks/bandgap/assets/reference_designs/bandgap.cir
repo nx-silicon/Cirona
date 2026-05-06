@@ -1,0 +1,107 @@
+* ==================================================================
+* PNP Bandgap Reference (1.8 V supply, vpdk180nm)
+* First-order BGR: PTAT (ΔVbe/R1) + CTAT (Vbe/R2), mirrored to R_OUT.
+* ==================================================================
+* Topology:
+*   - PMOS mirror MP1/MP2/MP3: three legs sharing gate `yg`
+*     (two sense legs drive nodes na/nb; third leg drives vref)
+*   - PNP diode pair Q1 (AREA=1) on na-branch
+*                 Q2 (AREA=8) on nb-branch (via series R1 = PTAT generator)
+*   - Shunt resistors R2a/R2b convert Vbe to I_CTAT
+*   - OTA XAMP forces nb = na by driving yg; closes the bandgap loop
+*   - Startup branch (R_STARTUP + MN_SENS + MN_KICK) escapes the
+*     zero-current state on power-up
+*   - R_OUTLOAD converts MP3's mirrored current to Vref at the output
+*
+* Design target: Vref ≈ 1.2 V at 27 °C, TT.
+* Core currents (nominal):
+*   I_PTAT = VT · ln(8) / R1      ≈ 26 mV × 2.08 / 15 kΩ ≈ 3.6 µA
+*   I_CTAT = Vbe(Q1) / R2a        ≈ 0.65 V / 180 kΩ      ≈ 3.6 µA
+*   I_leg  = I_PTAT + I_CTAT      ≈ 7.2 µA per sense branch
+*   Vref   = I_leg × R_OUTLOAD    ≈ 7.2 µA × 165 kΩ      ≈ 1.19 V
+* ==================================================================
+
+.param W_P      = 10u
+.param L_P      = 1u
+.param M_P      = 1
+.param R2_CTAT  = 180k
+.param R1_PTAT  = 15k
+.param R_OUT    = 171k
+.param AREA_Q1  = 1
+.param AREA_Q2  = 8
+.param R_START  = 500k
+.param W_SENS   = 5u
+.param L_SENS   = 1u
+.param W_KICK   = 5u
+.param L_KICK   = 1u
+
+.subckt bandgap vdd vss vref
+
+* 1) PMOS current sources (share gate yg)
+MP1  na   yg   vdd  vdd  pch  W=W_P   L=L_P   M=M_P
+MP2  nb   yg   vdd  vdd  pch  W=W_P   L=L_P   M=M_P
+MP3  vref yg   vdd  vdd  pch  W=W_P   L=L_P   M=M_P
+
+* 2) Core bandgap cell (PNP diodes + resistors)
+R2a  na   vss  {R2_CTAT}
+Q1   vss  vss  na   pnp  AREA=AREA_Q1
+
+R2b  nb   vss  {R2_CTAT}
+R1   nb   ny   {R1_PTAT}
+Q2   vss  vss  ny   pnp  AREA=AREA_Q2
+
+* 3) Error amplifier — forces nb = na, drives yg
+*    Simple 5-T OTA with PMOS input (na/nb sit ~0.65V so PMOS input is
+*    friendlier than NMOS on a 1.8V rail).
+* 2-stage PMOS-input OTA: 5-T 1st stage (vp=na/vn=nb), NMOS CS 2nd stage.
+*   - 1st stage (5T) is NON-INVERTING: vp ↑ → d2 ↑
+*   - 2nd stage (NMOS CS) is INVERTING: d2 ↑ → vout ↓
+*   - Overall 2-stage: INVERTING, so polarity requires vp = na, vn = nb
+*     (NOT the Razavi single-5T convention of vp = nb).
+*     With (na - nb) ↑ → vout ↓ → yg ↓ → I_mirror ↑ → nb rises faster
+*     than na (R_eq_nb > R_eq_na) → (na - nb) drifts negative, closing
+*     the loop with negative feedback.
+*   - This polarity bug (vp=nb in the original scaffolding) was caught
+*     in 2026-04-22 stranger-domain review — DC solver landed on a
+*     latch state with vref = 1.79 V. See failure_playbook entry
+*     `ota_polarity_reversed`.
+*
+* Sizing note: OTA is 4-5 µA per leg (low-power bandgap OTA). Bandgaps
+* need moderate OTA gain (≥ 40 dB) not bandwidth, so L is stretched.
+.subckt bgr_ota vp vn vout vdd vss
+    M_TAIL   cm    bp    vdd   vdd  pch  W=4u   L=4u
+    M1       d1    vp    cm    vdd  pch  W=4u   L=2u
+    M2       d2    vn    cm    vdd  pch  W=4u   L=2u
+    M3       d1    d1    vss   vss  nch  W=2u   L=2u
+    M4       d2    d1    vss   vss  nch  W=2u   L=2u
+    M_OUT    vout  d2    vss   vss  nch  W=4u   L=2u
+    M_LOAD   vout  bp    vdd   vdd  pch  W=4u   L=4u
+    * Self-biased tail: R_BIAS pulls bp down through M_BIAS diode; Vsg
+    * on tail & load PMOS = (VDD - bp) ≈ 0.9 V, giving ~ 5 µA per leg.
+    R_BIAS   vdd   bp    2Meg
+    M_BIAS   bp    bp    vss   vss  nch  W=0.5u L=2u
+    * Miller compensation across 2nd stage (M_OUT) with nulling resistor
+    * Rz. Rz kills the RHP zero at gm_out/Cm (otherwise it would show up
+    * as a supply-noise peak near 1 MHz). Rz ≈ 1/gm_out ≈ 20 kΩ.
+    Rz       d2    nz    20k
+    Cmiller  vout  nz    3p
+.ends bgr_ota
+
+XAMP na nb yg vdd vss bgr_ota
+
+* 4) Startup: kick yg low if vref is low
+R_STARTUP  vdd    v_sens  {R_START}
+MN_SENS    v_sens vref    vss     vss  nch  W=W_SENS  L=L_SENS
+MN_KICK    yg     v_sens  vss     vss  nch  W=W_KICK  L=L_KICK
+
+* 5) Output resistor converts mirrored current to vref
+R_OUTLOAD  vref   vss     {R_OUT}
+
+* 6) Outer bandgap loop: 2 pF on yg trims residual peaking.
+*    Bulk of phase margin comes from the OTA's internal Miller cap; this
+*    cap mainly avoids TRAN ringing at VDD ramp-up. Small value chosen to
+*    preserve high-frequency PSRR (larger caps couple supply noise through
+*    the mirror gate).
+Ccomp      yg     vss     2p
+
+.ends bandgap

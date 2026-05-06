@@ -1,0 +1,58 @@
+{
+  "cell_name": "current-mirror",
+  "description": "User-edited placement for current-mirror",
+  "grid_size": {
+    "cols": 10,
+    "rows": 8
+  },
+  "placements": {
+    "MOUT": {
+      "type": "nmos",
+      "col": 2,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "MREF": {
+      "type": "nmos",
+      "col": 0,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": false
+    }
+  },
+  "internal_nets": {
+    "ref_drain": [
+      "MREF__port__D",
+      "MREF__port__G",
+      "MOUT__port__G"
+    ]
+  },
+  "external_ports": {
+    "out_drain": {
+      "anchor": "core.out",
+      "connects_to": "MOUT__port__D",
+      "direction": "output",
+      "side": "right"
+    },
+    "ref_drain": {
+      "anchor": "core.ref",
+      "connects_to": [
+        "MREF__port__D",
+        "MREF__port__G",
+        "MOUT__port__G"
+      ],
+      "direction": "input",
+      "side": "left"
+    },
+    "vss": {
+      "anchor": "core.supply",
+      "connects_to": [
+        "MREF__port__S",
+        "MOUT__port__S"
+      ],
+      "direction": "power",
+      "side": "bottom"
+    }
+  }
+}

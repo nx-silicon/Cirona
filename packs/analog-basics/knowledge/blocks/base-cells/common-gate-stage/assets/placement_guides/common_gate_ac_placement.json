@@ -1,0 +1,37 @@
+{
+  "cell_name": "common-gate-stage",
+  "description": "Topology-aware placement for common-gate-stage (single_branch)",
+  "grid_size": {
+    "cols": 2,
+    "rows": 5
+  },
+  "placements": {
+    "M1": {
+      "type": "nmos",
+      "col": 1,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": false
+    }
+  },
+  "internal_nets": {},
+  "external_ports": {
+    "out": {
+      "connects_to": "M1__port__D",
+      "direction": "output",
+      "side": "right"
+    },
+    "gate": {
+      "connects_to": "M1__port__G",
+      "direction": "input",
+      "side": "left"
+    },
+    "in": {
+      "connects_to": "M1__port__S",
+      "direction": "input",
+      "side": "left"
+    }
+  },
+  "macros": {},
+  "anchors": {}
+}

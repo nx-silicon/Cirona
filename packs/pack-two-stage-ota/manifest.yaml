@@ -1,0 +1,44 @@
+# pack-two-stage-ota — Two-Stage Miller OTA PACK
+
+name: pack-two-stage-ota
+version: 1.0.0
+manifest_schema_version: v4-1.1
+tier: 1
+
+description: |
+  Two-Stage Miller OTA 设计知识包：经典两级跨导级 + 共源放大、Miller
+  补偿（Cc / Rz nulling resistor）、PM 60° / GBW 设计 sizing、slew
+  rate vs GBW 取舍、PSRR 第二级耦合问题、failure playbook。
+
+author: cirona team
+license: MIT
+
+contributes:
+  knowledge:
+    - knowledge/blocks/two-stage-ota
+
+requires:
+  cirona: ">=4.0.0,<5.0.0"
+
+depends_on: []
+
+activation:
+  keywords:
+    - two-stage OTA
+    - Miller OTA
+    - Miller compensation
+    - 双级 OTA
+    - 两级运放
+  user_says:
+    - 设计 two-stage OTA
+    - 设计两级 OTA
+    - 设计 Miller OTA
+
+metadata:
+  category: ota
+  status: stable
+  display_name: Two-Stage Miller OTA
+  tags:
+    - ota
+    - two-stage
+    - miller

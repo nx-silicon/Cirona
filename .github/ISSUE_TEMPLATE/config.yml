@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: 🌐 Cirona Website / Cirona 官网
+    url: https://www.nx-si.ai/
+    about: Visit our website for product information / 访问官网了解产品信息
+  - name: 📚 Read the README first / 先看 README
+    url: https://github.com/nx-silicon/Cirona#english
+    about: The README answers most install / setup questions in EN + 中文 / README 双语版覆盖了绝大多数安装和使用问题
+  - name: 💬 GitHub Discussions / 论坛
+    url: https://github.com/nx-silicon/Cirona/discussions
+    about: For open-ended questions, design tips, or general chat / 用于开放式问题、设计技巧分享、闲聊

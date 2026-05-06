@@ -1,0 +1,44 @@
+# pack-bandgap — Bandgap Reference 电路族 PACK
+
+name: pack-bandgap
+version: 1.0.0
+manifest_schema_version: v4-1.1
+tier: 1
+
+description: |
+  Bandgap Reference 电路设计知识包：PNP / native-NPN 实现、PTAT + CTAT
+  电流求和、startup circuit、curvature compensation、temperature drift /
+  PSRR / line regulation 的常见调试 playbook。
+
+author: cirona team
+license: MIT
+
+contributes:
+  knowledge:
+    - knowledge/blocks/bandgap
+
+requires:
+  cirona: ">=4.0.0,<5.0.0"
+
+depends_on: []
+
+activation:
+  keywords:
+    - bandgap
+    - 带隙基准
+    - PTAT
+    - CTAT
+    - voltage reference
+    - bgr
+  user_says:
+    - 设计 bandgap
+    - 设计 BGR
+    - 设计基准源
+
+metadata:
+  category: bandgap
+  status: stable
+  display_name: PNP Bandgap Reference
+  tags:
+    - bandgap
+    - reference

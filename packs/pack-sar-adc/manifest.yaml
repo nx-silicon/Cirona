@@ -1,0 +1,34 @@
+# pack-sar-adc
+
+name: pack-sar-adc
+version: 1.0.0
+manifest_schema_version: v4-1.1
+tier: 1
+
+description: |
+  SAR ADC 系统级设计知识包：覆盖 4 种主流拓扑（charge-redistribution / bottom-plate sampling / merged-cap switching / monotonic）+ DAC 设计 + comparator 选型 + 噪声预算分配 + 校准策略。包含 architecture 章节 + noise-budget 章节，体现 12-bit 100MS/s SAR 实战权衡的关键决策点。
+
+author: cirona team
+license: MIT
+
+contributes:
+  knowledge:
+    - knowledge/blocks/sar-adc
+
+requires:
+  cirona: ">=4.0.0,<5.0.0"
+
+depends_on: []
+
+activation:
+  keywords:
+    - sar-adc
+  user_says:
+    - 设计 sar-adc
+
+metadata:
+  category: adc
+  status: experimental
+  display_name: sar adc
+  tags:
+    - adc

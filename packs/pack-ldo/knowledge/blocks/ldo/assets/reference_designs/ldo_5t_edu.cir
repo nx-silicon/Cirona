@@ -1,0 +1,64 @@
+* ==================================================================
+* Simple PMOS-pass LDO (1.2 V out from 1.8 V, vpdk180nm)
+*   - NMOS diff-pair error amplifier (Vfb ≈ Vref ≈ 1.2 V is fine for NMOS input)
+*   - PMOS mirror load on the EA
+*   - PMOS pass device from VDD to Vout (wide, short-L)
+*   - Miller Cc from pass-gate to Vout for compensation
+*   - External feedback: unity (vfb = vout) by default; can swap in a
+*     resistor divider for programmable output
+*   - External output cap with ESR (user provides in the testbench)
+* ==================================================================
+* Ports:
+*   vdd, vss : supplies
+*   vout     : regulated output
+*   ibias    : external bias current in (5-10 uA typical)
+*   vref     : reference input (1.2 V typical, from a bandgap)
+*   vfb      : feedback input (tie to vout for unity FB)
+* ==================================================================
+* Nominal operating points (VDD=1.8, Vref=1.2, Iload=10mA):
+*   V(vout)  ≈ 1.20 V (loop-locked)
+*   V(vg_pass) ≈ 1.05 V (Vsg_pass ≈ 0.75 V for 10 mA load)
+*   V(ntail) ≈ 0.25 V
+*   I_pass ≈ Iload = 10 mA
+*   EA tail current ≈ 5 uA
+* ==================================================================
+
+.param W_diff   = 2u
+.param L_diff   = 1u
+.param M_diff   = 1
+.param W_load   = 2u
+.param L_load   = 1u
+.param M_load   = 1
+.param W_tail   = 1u
+.param L_tail   = 2u
+.param M_tail   = 1
+.param W_bias   = 1u
+.param L_bias   = 1u
+.param M_bias   = 1
+.param W_pass   = 1400u
+.param L_pass   = 0.5u
+.param M_pass   = 1
+.param Cc       = 2p
+
+.subckt ldo vdd vss vout ibias vref vfb
+
+* 1) Bias reference: external ibias -> diode-connected NMOS.
+Mbias   ibias  ibias  vss  vss  nch  W=W_bias  L=L_bias  M=M_bias
+
+* 2) Error amplifier: NMOS diff pair (vfb vs vref) + PMOS current-mirror load.
+*    NMOS inputs are fine: Vfb ≈ Vref ≈ 1.2 V leaves plenty of tail headroom.
+M1      vea_left  vfb   ntail  vss  nch  W=W_diff  L=L_diff  M=M_diff
+M2      vg_pass   vref  ntail  vss  nch  W=W_diff  L=L_diff  M=M_diff
+M3      vea_left  vea_left  vdd  vdd  pch  W=W_load  L=L_load  M=M_load
+M4      vg_pass   vea_left  vdd  vdd  pch  W=W_load  L=L_load  M=M_load
+M5      ntail     ibias   vss  vss  nch  W=W_tail  L=L_tail  M=M_tail
+
+* 3) PMOS pass device: Vsg_pass > |Vth| at Iload, gate from EA output.
+MP      vout  vg_pass  vdd  vdd  pch  W=W_pass  L=L_pass  M=M_pass
+
+* 4) Miller compensation: Cc from pass-gate to output.
+*    Pushes dominant pole down (1/(gm_pass*R_out*Cc)), creates pole-splitting
+*    with the Vout pole (which depends on the external cap + load).
+Cc      vg_pass  vout  {Cc}
+
+.ends ldo

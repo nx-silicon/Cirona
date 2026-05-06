@@ -1,0 +1,56 @@
+{
+  "schema_version": "2.0",
+  "cell_name": "source-follower",
+  "description": "User-edited placement for source-follower",
+  "grid_size": {
+    "cols": 10,
+    "rows": 8
+  },
+  "placements": {
+    "M1": {
+      "type": "nmos",
+      "col": 1,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": false
+    }
+  },
+  "internal_nets": {},
+  "external_ports": {
+    "gate": {
+      "connects_to": "M1__port__G",
+      "direction": "input",
+      "side": "left"
+    },
+    "out": {
+      "connects_to": "M1__port__S",
+      "direction": "output",
+      "side": "left"
+    },
+    "vdd": {
+      "connects_to": [
+        "M1__port__D"
+      ],
+      "direction": "power",
+      "side": "top"
+    }
+  },
+  "net_positions": {
+    "internal": {},
+    "external": {
+      "gate": {
+        "x": 92.18182117492127,
+        "y": 461.0909081665684,
+        "pinned": true
+      },
+      "out": {
+        "x": 170.3636379922366,
+        "y": 540.8181790671679,
+        "pinned": true
+      }
+    }
+  },
+  "macros": {},
+  "anchors": {},
+  "bands": []
+}

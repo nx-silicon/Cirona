@@ -1,0 +1,47 @@
+# pack-pdk-vpdk55nm — vpdk55nm 工艺 AI 提炼经验知识（占位框架）
+# 内容由 AI 在 55nm 项目中实际跑过沉淀；此处先建基本框架避免 agent
+# 在 55nm 项目中查不到任何 PDK knowledge 时空着干。
+#
+# auto_activate_pdk: vpdk55nm —— PackLoader 按项目 PDK 自动启用。
+
+name: pack-pdk-vpdk55nm
+version: 0.1.0
+manifest_schema_version: v4-1.1
+tier: 1
+
+description: |
+  vpdk55nm 工艺使用经验包（占位框架版 v0.1.0）：核心器件模型名 nch/pch、
+  Lmin=60nm、典型 corners (TT/FF/SS/FNSP/SNFP)、VDD=1.2V。具体 Vth0 /
+  μCox / vsat 等 BSIM4 参数典型值随 AI 在 55nm 项目跑设计过程中持续
+  沉淀。
+
+author: cirona team
+license: MIT
+
+contributes:
+  knowledge:
+    - knowledge/pdks/vpdk55nm
+
+requires:
+  cirona: ">=4.0.0,<5.0.0"
+
+depends_on: []
+
+activation:
+  keywords:
+    - vpdk55nm
+    - 55nm
+  user_says: []
+
+metadata:
+  category: foundation
+  status: stable
+  display_name: vpdk55nm Reference (v0.1 占位)
+  pdk_compatibility:
+    - vpdk55nm
+  auto_activate_pdk: vpdk55nm
+  tags:
+    - foundation
+    - pdk
+    - vpdk55nm
+    - placeholder

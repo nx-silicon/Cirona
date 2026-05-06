@@ -1,0 +1,77 @@
+# ============================================================================
+# cirona V4 PACK manifest 模板
+#
+# 复制本目录到目标位置后，按下述提示改这份 manifest：
+#   1. 把 name / version / description / author / 其他 metadata 改成你的 PACK 信息
+#   2. 删掉你 PACK 不需要的 contributes 子项（knowledge / skills / tools / assets）
+#     —— 至少保留一个非空类，否则 lint 不通过
+#   3. 改 activation.keywords / user_says 让 PACK 在合适的对话里被自动激活
+#
+# 详细 schema 字段含义见: docs/v4/V4_PACK_MANIFEST_SCHEMA.md (v4-1.1)
+# 写作步骤指南见:        docs/v4/PACK_AUTHOR_GUIDE.md
+# ============================================================================
+
+# 必填：PACK 唯一标识符（kebab-case，跨第三方 PACK 不重名）
+name: my-pack-name
+
+# 必填：SemVer 版本（PoC 阶段建议 0.1.0 起）
+version: 0.1.0
+
+# 必填：manifest schema 版本，当前唯一支持值
+manifest_schema_version: v4-1.1
+
+# 必填：本 PACK 完成什么任务，2-4 句话讲清楚领域 + 范围 + 关键资产
+description: |
+  团队内部某专题电路设计经验包。覆盖 X 拓扑选型 / Y sizing 推导 / Z spec 验证。
+  用 vpdk180nm 工艺，包含完整 reference cir + AC stability testbench + 12 P0 测试套件。
+  适用于 LDO / OTA / Comparator 等 spec 调优场景。
+
+# 推荐：作者 + license（团队 PACK 也建议填）
+author: Your Name <you@example.com>
+license: MIT
+# homepage: https://github.com/your-org/your-pack
+# repository: https://github.com/your-org/your-pack.git
+
+# 推荐：Tier 1 (Knowledge-only) / 2 (+ Skill) / 3 (+ Tool)。lint 会按 tier 校验
+tier: 1
+
+# 必填：本 PACK 贡献的资产清单。路径**相对** <pack-root>/ 解析（self-contained 形态）
+# 至少需要含一项非空。删除不需要的子项（YAML 不允许空 list 的字段，要删整个 key）
+contributes:
+  knowledge:
+    - knowledge/blocks/example-cell
+
+  # skills:
+  #   - skills/circuit-method/example-method.md
+
+  # tools:
+  #   - tools/sizing/example_tool
+
+  # assets:
+  #   - assets/placement_guides/
+
+# 必填：声明 PACK 与 cirona 引擎版本的兼容范围
+requires:
+  cirona: ">=4.0.0,<5.0.0"
+
+# 可选：依赖其他 PACK（加载时自动 ensure 已加载）。空 list 可省略
+depends_on: []
+
+# 可选：自动激活规则。命中 keywords / user_says 时 PACK 被自动加入运行时上下文
+activation:
+  keywords:
+    - example-cell                      # 你 PACK 涉及的核心电路名称
+    - 示例电路
+  user_says:
+    - 设计一个 example-cell             # 用户典型表达式（可选）
+
+# 可选：metadata 自由字段。常用：display_name / category / tags / status
+metadata:
+  display_name: My PACK Display Name
+  category: foundation                  # foundation / circuit / system / experimental
+  status: scaffolding                   # stable / scaffolding / experimental / deprecated
+  tags:
+    - example
+    - tier-1
+  pdk_compatibility:
+    - vpdk180nm                         # 已验证 / 撰写时使用的工艺

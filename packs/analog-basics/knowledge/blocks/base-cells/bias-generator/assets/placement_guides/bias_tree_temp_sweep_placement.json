@@ -1,0 +1,62 @@
+{
+  "cell_name": "bias-generator",
+  "description": "Topology-aware placement for bias-generator (bias_generator)",
+  "grid_size": {
+    "cols": 3,
+    "rows": 5
+  },
+  "placements": {
+    "MN_VBN": {
+      "type": "nmos",
+      "col": 0,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "MN_SINK_VBP": {
+      "type": "nmos",
+      "col": 2,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "MP_DIO_VBP": {
+      "type": "pmos",
+      "col": 0,
+      "row": 0,
+      "orientation": "normal",
+      "flip_h": false
+    }
+  },
+  "internal_nets": {
+    "vbn": [
+      "MN_VBN__port__D",
+      "MN_VBN__port__G",
+      "MN_SINK_VBP__port__G"
+    ],
+    "vbp": [
+      "MN_SINK_VBP__port__D",
+      "MP_DIO_VBP__port__G",
+      "MP_DIO_VBP__port__D"
+    ]
+  },
+  "external_ports": {
+    "vss": {
+      "connects_to": [
+        "MN_VBN__port__S",
+        "MN_SINK_VBP__port__S"
+      ],
+      "direction": "power",
+      "side": "bottom"
+    },
+    "vdd": {
+      "connects_to": [
+        "MP_DIO_VBP__port__S"
+      ],
+      "direction": "power",
+      "side": "top"
+    }
+  },
+  "macros": {},
+  "anchors": {}
+}

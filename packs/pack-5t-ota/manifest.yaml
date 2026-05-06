@@ -1,0 +1,42 @@
+# pack-5t-ota — Five-Transistor OTA PACK
+
+name: pack-5t-ota
+version: 1.0.0
+manifest_schema_version: v4-1.1
+tier: 1
+
+description: |
+  5T-OTA（Five-Transistor OTA）设计知识包：单端输出最简结构、tail
+  current source 设计、PMOS 输入对的 ICMR 取舍、与 folded cascode /
+  telescopic 的 trade-off。教学起点 + 简单 buffer / sample-hold 应用。
+
+author: cirona team
+license: MIT
+
+contributes:
+  knowledge:
+    - knowledge/blocks/5t-ota
+
+requires:
+  cirona: ">=4.0.0,<5.0.0"
+
+depends_on: []
+
+activation:
+  keywords:
+    - 5T-OTA
+    - 5T OTA
+    - five-transistor OTA
+    - 五管运放
+  user_says:
+    - 设计 5T-OTA
+    - 设计五管 OTA
+    - 简单 OTA
+
+metadata:
+  category: ota
+  status: stable
+  display_name: Five-Transistor OTA
+  tags:
+    - ota
+    - single-stage

@@ -1,0 +1,46 @@
+# pack-comparator — 比较器电路族 PACK
+
+name: pack-comparator
+version: 1.0.0
+manifest_schema_version: v4-1.1
+tier: 1
+
+description: |
+  Comparator（比较器）电路设计知识包：StrongARM latch、dynamic comparator、
+  preamp + latch 双级、kickback、metastability、offset MC 估算与校准
+  策略；从 SAR ADC 这种 high-speed 应用切入设计。
+
+author: cirona team
+license: MIT
+
+contributes:
+  knowledge:
+    - knowledge/blocks/comparator
+
+requires:
+  cirona: ">=4.0.0,<5.0.0"
+
+depends_on: []
+
+activation:
+  keywords:
+    - comparator
+    - 比较器
+    - StrongARM
+    - latch
+    - preamp
+    - kickback
+    - metastability
+  user_says:
+    - 设计 comparator
+    - 设计比较器
+    - StrongARM latch
+    - 比较器 offset
+
+metadata:
+  category: comparator
+  status: stable
+  display_name: Comparator
+  tags:
+    - comparator
+    - latch

@@ -1,0 +1,68 @@
+{
+  "cell_name": "output-stage",
+  "description": "V4 output-stage cell — covers Class-AB (dual-input, gate_n/gate_p) and Push-Pull (common-input) variants. Default geometry suits Class-AB common-source pair (MP/MN drains tied at out). Schema migrated from V3 class_ab_output_stage placement_guide (commit a07d68a) and adapted for V4 unified output-stage cell.",
+  "grid_size": {
+    "cols": 10,
+    "rows": 8
+  },
+  "placements": {
+    "MN": {
+      "type": "nmos",
+      "col": 1,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "MP": {
+      "type": "pmos",
+      "col": 1,
+      "row": 1,
+      "orientation": "normal",
+      "flip_h": false
+    }
+  },
+  "internal_nets": {
+    "out": [
+      "MP__port__D",
+      "MN__port__D"
+    ]
+  },
+  "external_ports": {
+    "gate_n": {
+      "connects_to": "MN__port__G",
+      "direction": "input",
+      "side": "left",
+      "description": "NMOS gate (Class-AB low-side input). For Push-Pull single-input variant, tie gate_n=gate_p at caller layer."
+    },
+    "gate_p": {
+      "connects_to": "MP__port__G",
+      "direction": "input",
+      "side": "left",
+      "description": "PMOS gate (Class-AB high-side input). For Push-Pull single-input variant, tie gate_n=gate_p at caller layer."
+    },
+    "out": {
+      "connects_to": [
+        "MP__port__D",
+        "MN__port__D"
+      ],
+      "direction": "output",
+      "side": "right"
+    },
+    "vdd": {
+      "connects_to": [
+        "MP__port__S"
+      ],
+      "direction": "power",
+      "side": "top"
+    },
+    "vss": {
+      "connects_to": [
+        "MN__port__S"
+      ],
+      "direction": "power",
+      "side": "bottom"
+    }
+  },
+  "macros": {},
+  "anchors": {}
+}

@@ -1,0 +1,45 @@
+# pack-ldo — LDO（线性稳压器）电路族 PACK
+
+name: pack-ldo
+version: 1.0.0
+manifest_schema_version: v4-1.1
+tier: 1
+
+description: |
+  LDO（Low-Dropout Regulator）电路设计知识包：拓扑选择（PMOS pass /
+  NMOS pass / replica bias）、loop stability（PSRR / load regulation /
+  zero-pulled-by-load-cap）、PMOS 输出 driver sizing、failure playbook。
+
+author: cirona team
+license: MIT
+
+contributes:
+  knowledge:
+    - knowledge/blocks/ldo
+
+requires:
+  cirona: ">=4.0.0,<5.0.0"
+
+depends_on: []
+
+activation:
+  keywords:
+    - LDO
+    - low-dropout
+    - 线性稳压
+    - voltage regulator
+    - PSRR
+    - load regulation
+  user_says:
+    - 设计 LDO
+    - 设计稳压器
+    - PMOS LDO
+    - NMOS LDO
+
+metadata:
+  category: regulator
+  status: stable
+  display_name: LDO
+  tags:
+    - regulator
+    - ldo

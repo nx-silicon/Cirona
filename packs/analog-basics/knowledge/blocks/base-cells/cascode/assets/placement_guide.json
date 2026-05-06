@@ -1,0 +1,89 @@
+{
+  "cell_name": "cascode",
+  "description": "User-edited placement for cascode",
+  "grid_size": {
+    "cols": 10,
+    "rows": 8
+  },
+  "placements": {
+    "MOUT": {
+      "type": "nmos",
+      "col": 1,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "MOUT_CAS": {
+      "type": "nmos",
+      "col": 1,
+      "row": 3,
+      "orientation": "normal",
+      "flip_h": false
+    },
+    "MREF": {
+      "type": "nmos",
+      "col": 0,
+      "row": 4,
+      "orientation": "normal",
+      "flip_h": true
+    },
+    "MREF_CAS": {
+      "type": "nmos",
+      "col": 0,
+      "row": 3,
+      "orientation": "normal",
+      "flip_h": true
+    }
+  },
+  "internal_nets": {
+    "out_main_d": [
+      "MOUT__port__D",
+      "MOUT_CAS__port__S"
+    ],
+    "ref_cas_d": [
+      "MREF_CAS__port__D",
+      "MREF__port__G",
+      "MOUT__port__G"
+    ],
+    "ref_main_d": [
+      "MREF_CAS__port__S",
+      "MREF__port__D"
+    ]
+  },
+  "external_ports": {
+    "cas_bias": {
+      "anchor": "core.bias",
+      "connects_to": [
+        "MREF_CAS__port__G",
+        "MOUT_CAS__port__G"
+      ],
+      "direction": "input",
+      "side": "left"
+    },
+    "out": {
+      "anchor": "core.out",
+      "connects_to": "MOUT_CAS__port__D",
+      "direction": "output",
+      "side": "right"
+    },
+    "ref_cas_d": {
+      "anchor": "core.in",
+      "connects_to": [
+        "MREF_CAS__port__D",
+        "MREF__port__G",
+        "MOUT__port__G"
+      ],
+      "direction": "input",
+      "side": "left"
+    },
+    "vss": {
+      "anchor": "core.supply",
+      "connects_to": [
+        "MREF__port__S",
+        "MOUT__port__S"
+      ],
+      "direction": "power",
+      "side": "bottom"
+    }
+  }
+}

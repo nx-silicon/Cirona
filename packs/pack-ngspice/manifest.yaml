@@ -1,0 +1,51 @@
+# pack-ngspice — ngspice 仿真器 AI 提炼经验知识
+# 不是 ngspice 二进制本身（用户自行安装的 ngspice 在系统 PATH），
+# 而是 AI 用过程中沉淀下来的 analyses / common-errors / convergence /
+# measurements 经验。
+
+name: pack-ngspice
+version: 1.0.0
+manifest_schema_version: v4-1.1
+tier: 1
+
+description: |
+  ngspice 仿真器经验知识包：DC/AC/TRAN/NOISE 分析模板、常见错误与
+  规避方法、收敛技巧、measurement 表达式语法陷阱。AI 在用 ngspice
+  跑仿真过程中沉淀，跨 PDK 通用。
+
+author: cirona team
+license: MIT
+
+contributes:
+  knowledge:
+    - knowledge/simulators/ngspice
+
+requires:
+  cirona: ">=4.0.0,<5.0.0"
+
+depends_on: []
+
+activation:
+  keywords:
+    - ngspice
+    - 仿真不收敛
+    - convergence
+    - DC analysis
+    - AC analysis
+    - TRAN
+    - NOISE
+    - measurement
+    - .meas
+  user_says:
+    - 仿真不收敛
+    - ngspice 报错
+    - 怎么写 measurement
+
+metadata:
+  category: foundation
+  status: stable
+  display_name: Ngspice Reference
+  tags:
+    - foundation
+    - simulator
+    - ngspice
