@@ -123,18 +123,62 @@ related_knowledge:
 | `W_pad_p` | padding in vbc_p generator | 1 µm | 2 µm | 1 | 调 vbc_p headroom |
 | `W_pad_n` | padding in vbc_n generator | 1 µm | 2 µm | 1 | 调 MN5 Vds（wide-swing 关键）|
 
-## Standard testbench 关键内容（同 5T-OTA 结构，用 ports inp/inn/ibias/out/vdd/vss）
+## Standard testbench 模板（DC OP 与 AC 共用激励）
+
+> ⭐ **IRON LAW（DC 与 AC 必须用同一激励）**：
+> - **DC OP 默认 closed-loop**（Rfb=1G/100Meg + Cfb=1F），与 AC testbench 同一组
+>   Vinp/Ibias/Rfb/Cfb 激励，仅切换 `.op` ↔ `.ac`
+> - **High-gain 单级 OTA (60-80dB) open-loop DC 不可靠**：fold ratio mismatch /
+>   cascode bias misalignment / 上下电流不匹配，被开环增益放大就让 vout 飘 rail
+> - **Open-loop DC（VINP=VINN 强制）仅作 sanity 备用**：与 closed-loop 对比定位
+>   Rfb 量级问题 vs sizing 真问题
+> - 详见横切章 `simulators/ngspice/testbench-patterns`
+
+实际 reference testbench 在 `assets/reference_designs/`：
+- `tb_dc_closed.sp` ← ⭐ **DC OP closed-loop**（主推，与 AC 共用激励）
+- `tb_dc_op.sp`     ← DC OP sanity 备用（open-loop，mismatch=0 对照）
+- `tb_ac_gain_bw.sp` ← Method C closed-loop（AC 测 PM 用，下方模板）
+
+### Template 1: DC OP（closed-loop，主推）
+
+```spice
+* DC Operating Point — closed-loop（与 AC testbench 同一激励，仅切 .op）
+.lib '../../pdk/vpdk180nm/vpdk180nm_corners.lib' TT
+.include '../design/fc_ota.cir'
+.param VCM = 0.9
+Vdd  vdd 0  DC 1.8
+Vinp vinp vcm DC 0 AC 1     $ AC 1 仅 .ac 用，.op 模式下不影响
+Vcm  vcm 0  DC VCM
+Rfb  vout vinn 1G           $ DC 闭环 (fc≈0.16nHz)；不收敛时降至 100Meg-10Meg
+Cfb  vinn 0 1               $ Cfb=1F：AC 路径上 vinn 接地
+Ibias vdd ibias 10u
+X1   vinp vinn vout ibias vdd 0 folded_cascode_ota
+.op
+.control
+  set noaskquit
+  run
+  echo "=== vinn vs Vcm（验 closed-loop 收敛）==="
+  print v(vinp) v(vinn) v(vout)
+  * 各 device region 检查：见 tb_dc_closed.sp 完整列表
+.endc
+.end
+```
+
+**Pass criterion**：所有 device region=SAT，Vds_margin > 50mV，**vinn 应与 Vcm
+收敛在 50mV 以内**（偏离过大 → Rfb 太大 / fold mirror imbalance）。
+
+### Template 2: AC gain / GBW / PM（与 Template 1 共用激励）
 
 ```spice
 .lib '../../pdk/vpdk180nm/vpdk180nm_corners.lib' TT
 .include '../design/fc_ota.cir'
 .param VCM = 0.9
 Vdd  vdd 0  DC 1.8
-Vinp vinp 0 DC VCM AC 1
-Rfb  vout vinn 1G        $ DC 闭环 vout->vinn
-Cfb  vinn 0 1
+Vinp vinp vcm DC 0 AC 1     $ 同 Template 1
+Vcm  vcm 0  DC VCM
+Rfb  vout vinn 1G           $ 同 Template 1
+Cfb  vinn 0 1               $ 同 Template 1
 Ibias vdd ibias 10u
-* port order: vinp vinn vout ibias vdd vss
 X1   vinp vinn vout ibias vdd 0 folded_cascode_ota
 .ac dec 50 1 1G
 .control
@@ -144,10 +188,23 @@ X1   vinp vinn vout ibias vdd 0 folded_cascode_ota
   let phase_deg = vp(vout) - vp(vinp)
   meas ac dc_gain      find gain_db    at=1
   meas ac gbw_hz       when gain_db=0  cross=1
-  meas ac phase_at_gbw find phase_deg  when gain_db=0 cross=1
-  meas ac pm_deg       param='180 + phase_at_gbw'
+  meas ac phase_dc     find phase_deg  at=1
+  meas ac phase_at_ugf find phase_deg  when gain_db=0 cross=1
+  * Anchor-difference PM (universal):
+  *   PM = 180° - (phase_dc - phase_at_ugf) — phase 走过的距离与 -180° 的余量
+  * 适用：FC-OTA 主极点远高于 1Hz，phase_dc=at(1Hz) 干净
+  meas ac pm_deg       param='180 - (phase_dc - phase_at_ugf)'
 .endc
 .end
+```
+
+### Template 1b: DC OP sanity（open-loop，仅作诊断对照）
+
+仅当 Template 1 closed-loop 下 vout 飘 rail 时用本模板做对照（见 `tb_dc_op.sp`）。
+诊断逻辑：
+- T1 fail / T1b pass → Rfb 量级或 fold mirror imbalance
+- T1 fail / T1b fail → 真 sizing 问题（fold ratio / cascode bias / W·m）
+- T1 pass / T1b 飘 rail → **预期常态**（high-gain open-loop 物理本不可靠）
 ```
 
 ## 已知设计陷阱（FC-OTA E2E v3 + V3 历史教训）
@@ -181,7 +238,7 @@ X1   vinp vinn vout ibias vdd 0 folded_cascode_ota
 
 ## 下一步 Required Action
 
-1. 通过 `load_knowledge(name='folded-cascode-ota', asset='reference_designs/fc_ota.cir')` 抄拓扑（device 连接 / fold 结构 / bias tree，不复制数值）；同样方式拿 `reference_designs/tb_dc_op.sp`
+1. 通过 `load_knowledge(name='folded-cascode-ota', asset='reference_designs/fc_ota.cir')` 抄拓扑（device 连接 / fold 结构 / bias tree，不复制数值）；同样方式拿 `reference_designs/tb_dc_closed.sp` 和 `reference_designs/tb_ac_gain_bw.sp`
 2. 推导自己 spec 的 W/L/m（R0 铁律：diff pair / fold PMOS / cascode / mirror sizing 必须按目标 GBW 和 ibias 重推，bias 支路电流密度与主支路保持一致，不可复制参考数值）
 3. `write_file` → `design/fc_ota.cir` + `design/sizing.yaml`
-4. `simulate` `testbench/tb_dc_op.sp` → 验证 DC OP / 再跑 `tb_ac_gain_bw.sp` 验 gain/PM
+4. `simulate` `testbench/tb_dc_closed.sp` → 验证 DC OP（closed-loop 主测）/ 再跑 `tb_ac_gain_bw.sp` 验 gain/PM（与 DC 共用激励）。仅当 vout 飘 rail 需诊断时再跑 `tb_dc_op.sp` 做 open-loop sanity 对照

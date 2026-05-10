@@ -141,15 +141,24 @@ X1 vdd vss vout ibias vref vfb your_ldo
 
   meas ac dc_gain      find gain_db   at=1
   meas ac ugf          when gain_db=0 cross=1
-  meas ac phase_dc     find phase_deg at=1
   meas ac phase_at_ugf find phase_deg when gain_db=0 cross=1
 
-  * ── Anchor-difference PM 公式（convention-independent，无 ±180° wrap 陷阱）──
-  let phase_loss   = phase_dc - phase_at_ugf
-  let phase_margin = 180 - phase_loss
+  * ── 起点观察法 PM 公式（**LDO 必用此法，不能用 anchor-difference**）──
+  *   原因：LDO 主极点常 < 1Hz（Cload 几 µF + R_load → fp1 ≈ 0.1-10Hz），
+  *   .ac 从 1Hz 起跑时 phase_dc=at(1Hz) 已偏离真 DC phase（误差可达 60°+），
+  *   anchor-difference 公式 `180 - (phase_dc - phase_at_ugf)` 算偏。
+  *
+  *   PMOS-pass + EA(+)=vfb 标准 LDO：vinj 注入 vfb → EA out → vg → PMOS 反相
+  *     → vout → vfb；forward gain (vout/vinj) DC phase 起点 = 180°
+  *     → phase 从 180° 滞后到 UGF 处的 phase_at_ugf
+  *     → PM = phase_at_ugf （直接读，不需 phase_dc 锚点）
+  *   拓扑变体不同（NMOS-pass / EA polarity 反 / 非反相注入端）→ 起点为 0°
+  *     → PM = 180 + phase_at_ugf
+  *   验证起点：跑一次 .ac dec 10 1u 1m 看 phase 在 1µHz 处的真值（必为 0° 或 180°）
+  let phase_margin = phase_at_ugf
 
   echo "=== AC loop gain results ==="
-  print dc_gain ugf phase_dc phase_at_ugf phase_margin
+  print dc_gain ugf phase_at_ugf phase_margin
 
   wrdata ../simulation/tb_ac/ldo_loopgain.dat gain_db phase_deg
 .endc
@@ -164,7 +173,8 @@ X1 vdd vss vout ibias vref vfb your_ldo
 | `Vac vfb 0 AC 1` (Vac 一端接地，DC=0 钳住 vfb) | vfb DC=0 → M2 反馈失败 → vout 漂 | **浮动** Vinj：`Vinj vfb vfb_dc DC 0 AC 1`（**两端都接节点不接地**）|
 | `Vac vfb 0 DC 0.9 AC 1` (用 Vac 钳 DC=0.9) | Vac 把 vfb 钳固定 0.9V，反馈不动 → loop gain ≈ 0 | 浮动 Vinj，DC 由 Rfb 闭环自动 |
 | 测量点用 `v(vfb)` 或 `v(vdiv)` | 测的不是 loop gain | T(f) = `v(vout) / v(vfb)`，因为 v(vfb) ≈ 1V@AC，所以 `db(abs(v(vout)))` 直接 = T_db |
-| PM 公式 `180 + phase_at_gbw` | 当 phase 跨过 ±180° wrap 时算错 | **anchor-difference**: `phase_margin = 180 - (phase_dc - phase_at_ugf)`，convention-independent |
+| PM 公式 `180 + phase_at_gbw` 直接套 | 拓扑反相 / phase wrap 时算错 | **LDO 用起点观察法**：先确认 forward gain DC 极性（PMOS-pass 标准 LDO 是 180°），再 `pm = phase_at_ugf` |
+| PM 公式用 anchor-difference `180 - (phase_dc - phase_at_ugf)` | LDO 主极点 < 1Hz 时 phase_dc=at(1Hz) 已偏离真 DC，PM 算偏 | LDO **不要**用 anchor-difference；OTA 主极点远高于 1Hz 才能用 |
 | 没设 `set units = degrees` | vp() 返回弧度，PM 数字 57× 错 | **必加** `set units = degrees` 在 `.control` 块顶 |
 
 ### Iload corner sweep（必做）

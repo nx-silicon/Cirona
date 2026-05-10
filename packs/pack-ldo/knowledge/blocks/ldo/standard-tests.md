@@ -104,16 +104,41 @@ Vac  vfb_inj  0  AC 1
 
 > ngspice 默认 vp() 返回弧度，没显式声明 → PM 数值乘 180/π，看起来 178° 实际 3°。**LDO v3 实测踩过这个坑**。
 
-### Conv-3: PM 公式用锚点差值法
+### Conv-3: PM 公式用起点观察法（**LDO 主极点低，不能用 anchor-difference**）
+
+LDO 外环主极点常在 < 1Hz（PMOS pass + Cload 几 µF + R_load → fp1 一般 0.1-10Hz），
+ngspice `.ac dec 50 1 1G` 在 1Hz 处采到的 phase 已有相位滞后（不再是真 DC phase），
+此时 anchor-difference 公式 `PM = 180 - (phase_dc - phase_at_ugf)` 会算偏：
+
+```
+例: 主极点 fp1 = 0.5Hz
+    phase_at_1Hz = phase_dc(true) - arctan(1/0.5) ≈ phase_dc(true) - 63°
+    anchor 公式 phase_dc 用 at(1Hz) → 真实滞后被低估 63° → PM 算高 63°
+```
+
+**LDO 用起点观察法（直接读 phase_at_ugf + 已知 forward gain DC 极性）**：
 
 ```spice
 let phase_deg = vp(vfb) - vp(vfb_inj)
-meas ac phase_dc      find phase_deg at=1
 meas ac phase_at_ugf  find phase_deg when gain_db=0 cross=1
-let pm_deg = 180 - (phase_dc - phase_at_ugf)
+
+* PMOS-pass + EA(+)=vfb 标准 LDO 拓扑：
+*   vinj 注入 vfb 端 → EA out → vg_pass → PMOS 反相到 vout → vfb
+*   forward gain (vout/vinj 或 vfb/vinj) DC phase 起点 = 180°
+*   phase 从 180° 滞后到 UGF 处 phase_at_ugf
+*   PM = phase_at_ugf （直接读，不需 phase_dc 锚点）
+let pm_deg = phase_at_ugf
+
+* 拓扑变体不同时确认起点（跑一次 .ac dec 10 1u 1m 看真 DC phase）：
+*   forward gain DC 起点 0°  → pm_deg = 180 + phase_at_ugf
+*   forward gain DC 起点 180° → pm_deg = phase_at_ugf
 ```
 
-或等价的：`pm_deg = 180 + phase_at_ugf`（前提 phase_dc ≈ 0°）。**锚点差值法对 phase 符号约定无关**，更稳健。
+**为什么 LDO 必须用方法 C 而不是方法 B**：anchor-difference 要求 `phase_dc` 锚点在
+所有极点之前的频率采到（即 f << fp1）。LDO fp1 经常 < 1Hz，要锚到 1mHz 以下才干净，
+.ac sweep 多跑 3 个 dec（300+ 点）成本高；起点观察法只看 UGF 处一个点 + 拓扑事实，
+更稳健。OTA 主极点 >> 1Hz，仍用 anchor-difference 方法 B（见 ngspice
+`testbench-patterns` § PM 公式选用）。
 
 ### Conv-4: Tran reference 用 V_pre_step（不用 nominal）
 

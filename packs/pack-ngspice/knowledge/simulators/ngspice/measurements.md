@@ -34,8 +34,10 @@ related_knowledge:
   * 4) 命名测量（meas）
   meas ac gain_dc      find gain_db    at=1
   meas ac gbw_hz       when gain_db=0  cross=1
-  meas ac phase_at_gbw find phase_deg  when gain_db=0 cross=1
-  meas ac pm_deg       param='180 + phase_at_gbw'   $ phase_at_gbw signed → PM = 180+phase
+  meas ac phase_dc     find phase_deg  at=1
+  meas ac phase_at_ugf find phase_deg  when gain_db=0 cross=1
+  * Anchor-difference PM (universal，主极点 >> 1Hz 时干净；OTA 默认用此法)
+  meas ac pm_deg       param='180 - (phase_dc - phase_at_ugf)'
   
   * 5) 屏幕回显（关键 KPI 给 agent 抓）
   echo "gain_dc=$&gain_dc dB  gbw=$&gbw_hz Hz  pm=$&pm_deg deg"
@@ -82,7 +84,9 @@ meas tran tdelay     when v(vout)=0.5 cross=1  $ 边沿穿越 0.5V 的时间
 ### 3. `param=` —— 派生计算（用前面 meas 结果）
 
 ```spice
-meas ac pm_deg param='180 + phase_at_gbw'    $ PM = 180 + signed phase
+* OTA PM (anchor-difference universal):
+meas ac pm_deg param='180 - (phase_dc - phase_at_ugf)'
+* DC rout:
 meas dc rout_kohm param='(v_out_h - v_out_l) / (i_h - i_l) / 1e3'
 ```
 
@@ -153,24 +157,63 @@ hierarchical 器件参数命名：
 
 ### AC：DC 增益 + GBW + PM（OPA / LDO loop）
 
+**两种 PM 公式按主极点位置选**：
+
+#### 方法 B (anchor-difference) — OTA 默认（主极点 >> 1Hz）
+
 ```spice
 .control
   op
   ac dec 50 1 1G
   setplot ac1
-  
-  let gain_db   = db(abs(v(vout)/v(vinn)) + 1e-20)    $ loop gain
-  let phase_deg = 180/PI * (vp(vout) - vp(vinn))      $ loop phase
-  
+
+  let gain_db   = db(abs(v(vout)/v(vinp)) + 1e-20)
+  let phase_deg = 180/PI * (vp(vout) - vp(vinp))
+
   meas ac gain_dc      find gain_db    at=1
   meas ac gbw_hz       when gain_db=0  cross=1
-  meas ac phase_at_gbw find phase_deg  when gain_db=0 cross=1
-  meas ac pm_deg       param='180 + phase_at_gbw'    $ signed phase(deg) 约为负值时：PM = 180+phase
-  
+  meas ac phase_dc     find phase_deg  at=1
+  meas ac phase_at_ugf find phase_deg  when gain_db=0 cross=1
+  * Anchor-difference: phase 走过的距离与 -180° 的余量
+  *   universal，对 vinp/vinn 注入 + 内部反相数都对
+  meas ac pm_deg       param='180 - (phase_dc - phase_at_ugf)'
+
   echo "gain_dc=$&gain_dc gbw=$&gbw_hz pm=$&pm_deg"
   wrdata ../simulation/tb_ac/loop.csv frequency gain_db phase_deg
 .endc
 ```
+
+#### 方法 C (起点观察法) — LDO 必用（主极点 < 1Hz 是常态）
+
+```spice
+.control
+  op
+  ac dec 50 1 1G
+  setplot ac1
+
+  let gain_db   = db(abs(v(vout)) + 1e-20)
+  let phase_deg = 180/PI * vp(vout)
+
+  meas ac gain_dc      find gain_db    at=1
+  meas ac gbw_hz       when gain_db=0  cross=1
+  meas ac phase_at_ugf find phase_deg  when gain_db=0 cross=1
+  * 起点观察法（先确认 forward gain DC 极性）：
+  *   forward gain DC 起点 = 0°  → pm = 180 + phase_at_ugf
+  *   forward gain DC 起点 = 180° → pm = phase_at_ugf
+  * PMOS-pass + EA(+)=vfb 标准 LDO: 起点 180°，所以 pm = phase_at_ugf
+  let pm_deg = phase_at_ugf
+
+  echo "gain_dc=$&gain_dc gbw=$&gbw_hz pm=$&pm_deg"
+.endc
+```
+
+**何时用方法 C？** 主极点低于 .ac 起跑频率（典型 LDO Cload 几 µF + R_load → fp1 ≈
+0.1-10Hz）。此时 `phase_dc=at(1Hz)` 已偏离真 DC phase（误差可达 60°+），方法 B 算偏。
+方法 C 不依赖 phase_dc 锚点，只需 forward gain 拓扑 DC 极性事实（跑一次 .ac dec 10
+1u 1m 即可确认）。
+
+**何时用方法 B？** OTA 主极点远高于 1Hz（典型 kHz~MHz），phase_dc=at(1Hz) 是干净
+DC，anchor-difference 公式 universal 且不需要拓扑学问。
 
 ### Tran：Slew Rate / settling
 
@@ -204,8 +247,8 @@ hierarchical 器件参数命名：
 - [ ] 多分析时 **`setplot <plot>` 显式切换**（不要假设当前 plot）
 - [ ] 所有 `db(x)` 都加了 `+ 1e-20`
 - [ ] 所有 `vp(x)` 都乘了 `180/PI`（或全局 `set units=degrees`）
-- [ ] `meas ac pm_deg` 先确认 phase 约定；signed negative phase 用 `'180 + phase_at_gbw'`
-- [ ] `meas ac phase_at_gbw` 用 `find phase_deg when ...`（不是 bare `when`，bare when 返回横轴值不是 phase）
+- [ ] `meas ac pm_deg` 按主极点位置选公式：OTA 用 anchor-difference `180 - (phase_dc - phase_at_ugf)`；LDO 主极点 < 1Hz 用起点观察法 `pm = phase_at_ugf` (起点 180°) 或 `pm = 180 + phase_at_ugf` (起点 0°)
+- [ ] `meas ac phase_at_ugf` 用 `find phase_deg when ...`（不是 bare `when`，bare when 返回横轴值不是 phase）
 - [ ] `.control` 内 `meas tran trig...targ` **写在同一行**（不要换行，换行后 targ 会变独立命令）
 - [ ] `.control` 内 `find rout_vec at=...`（不是 `find param='deriv(...)' at=...`；先 `let` 成 vector）
 - [ ] 关键 KPI 用 `echo "$&var"` 输出（不依赖 print / wrdata 跨 plot）
@@ -217,7 +260,8 @@ hierarchical 器件参数命名：
 | 心里想 | 现实 |
 |---|---|
 | "vp() 返回度" | 默认 radians（除非 `set units=degrees`），必须 ×180/PI 或全局设单位 |
-| "PM 永远 = 180 ± phase_at_gbw" | 先确认 phase signed/unsigned 与单位；signed negative phase 常用 `'180 + phase'` |
+| "PM 永远 = 180 + phase_at_gbw" | 旧公式仅 phase 起点 0° + UGF 在第三象限时对；反相 forward gain (起点 180°) 时给 nonsense。OTA 用 anchor-difference `180 - (phase_dc - phase_at_ugf)`；LDO 主极点 < 1Hz 用起点观察法直接读 phase_at_ugf |
+| "anchor-difference 公式万能" | 主极点远高于 phase_dc 锚点频率 (典型 1Hz) 时干净；LDO 主极点 < 1Hz 时 phase_dc 已偏离真 DC，PM 算偏，必须改用起点观察法 |
 | "db(0) 没事，0 → -∞" | 产生 -Inf 污染 KPI；统一 `+ 1e-20` 数值防御 |
 | ".meas dot-card 不可靠" | 不准——dot-card 与 control 内 meas 是 ngspice 支持的等价语句；agent **优先**用 .control 内 meas（结果可继续引用）|
 | "多次 op 后变量都活" | 跨 plot 失活；用 `echo "$&var"` 立即展开（或 `plotname.vector` 显式引用）|

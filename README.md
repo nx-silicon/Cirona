@@ -7,12 +7,14 @@
 *From spec to silicon — analog design assisted end-to-end*
 *从规格书到仿真验证，全流程 AI 辅助*
 
-[![Release](https://img.shields.io/badge/release-v1.0.0--rc9.20-blue?style=flat-square)](https://github.com/nx-silicon/Cirona/releases)
+[![Release](https://img.shields.io/badge/release-v0.9.0--beta-orange?style=flat-square)](https://github.com/nx-silicon/Cirona/releases/tag/v0.9.0)
 [![Platform](https://img.shields.io/badge/platform-Windows-lightgrey?style=flat-square&logo=windows)](https://github.com/nx-silicon/Cirona/releases)
 [![Python](https://img.shields.io/badge/python-3.12%2B-yellow?style=flat-square&logo=python)](https://www.python.org/downloads/)
 [![GitHub](https://img.shields.io/badge/github-nx--silicon%2FCirona-181717?style=flat-square&logo=github)](https://github.com/nx-silicon/Cirona)
 
-📥 **[Download Installer / 下载安装包](https://github.com/nx-silicon/Cirona/releases)**  ·  💬 **[Report an Issue / 提交反馈](https://github.com/nx-silicon/Cirona/issues)**
+📥 **[Download v0.9.0 Installer / 下载 v0.9.0 安装包](https://github.com/nx-silicon/Cirona/releases/tag/v0.9.0)**  ·  💬 **[Report an Issue / 提交反馈](https://github.com/nx-silicon/Cirona/issues)**
+
+> 🧪 **Public Beta / 公开测试版** — Cirona v0.9.0 是首个公开测试版本，欢迎试用并反馈问题。正式 v1.0 将在 beta 反馈收敛后发布。
 
 [**English**](#english)  |  [**中文**](#中文)
 
@@ -60,35 +62,39 @@ drives ngspice (DC / AC / transient / noise), and self-corrects on the results.
   insights it has discovered; reopen a project and the context restores.
 - **Multi-provider LLM support** — Anthropic, OpenAI, DeepSeek, Gemini,
   Kimi, MiniMax, GLM (configurable in Settings).
+- **Auto-update** — Cirona checks for new releases on launch and prompts
+  you to upgrade with one click. No manual download or reinstall.
 
 ## System requirements
 
 | Item | Requirement |
 |------|-------------|
 | OS | Windows 10 / 11 (x64) |
-| Python | **3.12 or newer** (mandatory) |
-| Disk | Installer ~100 MB; runtime data ~500 MB |
+| Disk | Installer ~176 MB; runtime data ~500 MB |
+| Python | **Bundled** — frozen Python 3.14 runtime in the installer |
 | ngspice | **Bundled** — no separate install needed |
 
 ## Install
 
-**1. Install Python 3.12+** from <https://www.python.org/downloads/>. Tick
-**"Add Python to PATH"** during setup. Verify with `python --version`.
-
-**2. Install Cirona** — download `exe` from the
+**1. Download & install Cirona** — grab the latest
+`win-<version>-64bit.exe` (currently `win-0.9.0-64bit.exe`, ~176 MB) from the
 **[Releases page](https://github.com/nx-silicon/Cirona/releases)** and run it.
 Windows Defender SmartScreen may warn because the binary is unsigned — click
-**More info → Run anyway**.
+**More info → Run anyway**. The installer lets you pick the install
+directory; user data goes to `D:\CironaData` by default (falls back to
+E/F/G if D: is missing).
 
-**3. First-run wizard** (3 steps, ~3–8 min):
-- **Pick a data directory** — e.g. `D:\Cirona`. Don't put it under
-  `Program Files`.
-- **Auto-install dependencies** — Cirona creates a Python venv, installs
-  backend packages, and copies demo projects + PDKs to your data directory.
-- **Enter API keys** — at least one LLM provider key. Editable later in
-  **Settings**.
+**2. First launch** — splash takes ~5–12 s on first run while Windows
+Defender scans the encrypted modules (subsequent launches are sub-2 s).
+Once the main window opens, go to **Settings** and enter at least one LLM
+provider API key.
 
-The wizard runs only once; later launches go straight to the main UI.
+Demo projects (`fc_ota`, `two_stage`, `bandgap`, `ldo`) and bundled PDKs
+ship with the installer — nothing else to download.
+
+Once installed, Cirona checks for new releases on each launch — when a
+new version is available you'll see a notification offering one-click
+upgrade.
 
 ## Quick start
 
@@ -96,10 +102,10 @@ After install you'll find 4 demo projects in your library:
 
 | Cell | Process / VDD | Headline measured KPIs (TT 27 °C) | Status |
 |------|---------------|-----------------------------------|--------|
-| **fc_ota** | vpdk180nm / 1.8 V | Gain = 72.2 dB · GBW = 10.16 MHz · PM = 67.8° · P = 0.18 mW | ✅ 4/4 PASS |
-| **two_stage** | vpdk55nm core / 1.2 V | Gain = 77.0 dB · GBW = 10.7 MHz · PM = 75° · P = 165 µW | ⚠️ 4/5 + 1 marginal |
+| **fc_ota** | vpdk180nm / 1.8 V | Gain = 72.2 dB · GBW = 10.16 MHz · PM = 67.8° · P = 0.18 mW | ✅ 5/5 PASS |
+| **two_stage** | vpdk55nm core / 1.2 V | Gain = 77.0 dB · GBW = 10.77 MHz · PM = 75.6° · P = 165 µW | ⚠️ 4/5 + 1 marginal |
 | **bandgap** | vpdk180nm / 1.8 V | Vref = 1.185 V · TC = 44.7 ppm/°C · Iq ~ 24 µA · startup = 562 ns | ✅ 5/5 PASS |
-| **ldo** | vpdk55nm IO / 1.8 V→1.2 V | Vout error < ±1 mV · Iq ~ 60 µA · PSRR = 70.8 dB @ 1 kHz · PM = 62°–76° (Iload 0–10 mA) · undershoot 0.45 mV / overshoot 0.36 mV @ 100 ns load step | ✅ 13/13 PASS |
+| **ldo** | vpdk55nm IO / 1.8 V→1.2 V | Vout error < ±1 mV · Iq ~ 60 µA · PSRR = 70.8 dB @ 1 kHz · PM = 62°–76° (Iload 0–10 mA) | ✅ 13/13 PASS |
 
 Open one and chat:
 
@@ -120,7 +126,13 @@ No. Cirona uses bundled ngspice with virtual 180 nm / 55 nm PDKs. No
 commercial EDA license needed.
 
 **Can I bring my own PDK?**
-Not in v1.0. External PDK import is on the roadmap.
+Yes. Cirona supports importing custom PDKs from the GUI:
+**Settings → PDK Library → Add PDK…**, then pick your PDK directory. Any
+standard SPICE-format PDK that ngspice can parse works — the source folder
+just needs to contain a `config/pdk_config.json`. Three import modes are
+offered: *reference* (zero-copy, default), *junction* (symlink under the
+data dir), and *copy* (full duplicate). Newly added PDKs show up in the
+**New Library** dialog without restarting the app.
 
 **Are my API keys safe?**
 Stored locally at `<data-dir>\.cirona\settings\.env`. Cirona itself doesn't
@@ -130,7 +142,7 @@ phone home — LLM calls go directly from your machine to the chosen provider.
 No. User data lives in your data directory, fully separated from the
 install. In-place upgrades don't touch it.
 
-## Known limitations (v1.0-rc)
+## Known limitations
 
 - Windows only (Mac / Linux planned)
 - Installer is unsigned (SmartScreen warning is expected)
@@ -145,9 +157,7 @@ please include a description, screenshots, and the contents of
 ## Roadmap
 
 - [ ] Mac / Linux support
-- [ ] Embedded Python runtime (no manual install)
 - [ ] More circuit families (Switched-Capacitor / Class-D / PLL)
-- [ ] Custom PDK import
 - [ ] Multi-corner waveform overlay
 
 ## What's in this repository
@@ -178,28 +188,26 @@ Cirona 是一个 Windows 桌面工具，让模拟 IC 工程师通过自然语言
 - **自动优化**——单目标和多目标优化算法，支持增益 × 功耗 × 带宽 Pareto 寻优
 - **跨会话记忆**——AI 记住你的设计偏好和已发现的电路规律，重新打开同一项目时自动恢复上下文
 - **多 LLM Provider 支持**——Anthropic、OpenAI、DeepSeek、Gemini、Kimi、MiniMax、GLM（在 Settings 里配置）
+- **自动更新**——启动时自动检测新版本，发现后右下角弹提示一键升级，无需手动下载重装
 
 ## 系统要求
 
 | 项目 | 要求 |
 |------|------|
 | 操作系统 | Windows 10 / 11（x64） |
-| Python | **3.12 或更高版本**（必须） |
-| 磁盘空间 | 安装包 ~100MB，运行时数据 ~500MB |
+| 磁盘空间 | 安装包 ~176MB，运行时数据 ~500MB |
+| Python | **已内置**——安装包包含 frozen 的 Python 3.14 runtime |
 | ngspice | **已内置**，无需另行安装 |
 
 ## 安装步骤
 
-**1. 安装 Python 3.12+**——前往 <https://www.python.org/downloads/> 下载，安装时勾选 **"Add Python to PATH"**。验证：命令提示符输入 `python --version`，应显示 `Python 3.12.x`。
+**1. 下载并安装 Cirona**——从 **[Releases 页面](https://github.com/nx-silicon/Cirona/releases)** 下载最新的 `win-<版本>-64bit.exe`（当前为 `win-0.9.0-64bit.exe`，约 176 MB），双击运行。Windows Defender 可能弹出 SmartScreen 警告（因没有代码签名证书），点击「更多信息」→「仍要运行」即可。安装时可以选择安装目录；用户数据默认放在 `D:\CironaData`（D 盘不存在会自动 fallback 到 E/F/G）。
 
-**2. 安装 Cirona**——从 **[Releases 页面](https://github.com/nx-silicon/Cirona/releases)** 下载 exe安装包，双击运行。Windows Defender 可能弹出 SmartScreen 警告（因没有代码签名证书），点击「更多信息」→「仍要运行」即可。
+**2. 首次启动**——splash 加载约 5–12 秒（Windows Defender 首次扫描加密模块，之后启动 < 2 秒）。主界面打开后，到 **Settings** 填至少一个 LLM provider 的 API Key 就能开始用。
 
-**3. 首次启动初始化**（三步向导，约 3–8 分钟）：
-- **选择数据目录**——建议 `D:\Cirona`，不要放在 `Program Files` 里
-- **自动安装依赖**——创建 Python 虚拟环境、安装后端包、复制示例项目和 PDK
-- **填写 API Key**——至少填一个 LLM provider，之后在 Settings 里随时可改
+示例项目（`fc_ota`、`two_stage`、`bandgap`、`ldo`）和 PDK 已随安装包发布，无需额外下载。
 
-向导只运行一次，之后直接进入主界面。
+安装完成后，Cirona 每次启动会自动检测新版本，有更新时右下角弹提示一键升级。
 
 ## 快速开始
 
@@ -207,10 +215,10 @@ Cirona 是一个 Windows 桌面工具，让模拟 IC 工程师通过自然语言
 
 | Cell | 工艺 / VDD | 主要实测 KPI (TT 27 °C) | 状态 |
 |------|-----------|------------------------|------|
-| **fc_ota** | vpdk180nm / 1.8 V | Gain = 72.2 dB · GBW = 10.16 MHz · PM = 67.8° · P = 0.18 mW | ✅ 4/4 PASS |
-| **two_stage** | vpdk55nm core / 1.2 V | Gain = 77.0 dB · GBW = 10.7 MHz · PM = 75° · P = 165 µW | ⚠️ 4/5 + 1 marginal |
+| **fc_ota** | vpdk180nm / 1.8 V | Gain = 72.2 dB · GBW = 10.16 MHz · PM = 67.8° · P = 0.18 mW | ✅ 5/5 PASS |
+| **two_stage** | vpdk55nm core / 1.2 V | Gain = 77.0 dB · GBW = 10.77 MHz · PM = 75.6° · P = 165 µW | ⚠️ 4/5 + 1 marginal |
 | **bandgap** | vpdk180nm / 1.8 V | Vref = 1.185 V · TC = 44.7 ppm/°C · Iq ~ 24 µA · startup = 562 ns | ✅ 5/5 PASS |
-| **ldo** | vpdk55nm IO / 1.8 V→1.2 V | Vout 误差 < ±1 mV · Iq ~ 60 µA · PSRR = 70.8 dB @ 1 kHz · PM = 62°–76°（Iload 0–10 mA）· undershoot 0.45 mV / overshoot 0.36 mV @ 100 ns load step | ✅ 13/13 PASS |
+| **ldo** | vpdk55nm IO / 1.8 V→1.2 V | Vout 误差 < ±1 mV · Iq ~ 60 µA · PSRR = 70.8 dB @ 1 kHz · PM = 62°–76°（Iload 0–10 mA） | ✅ 13/13 PASS |
 
 点击任一项目，在右侧聊天框输入：
 
@@ -230,7 +238,10 @@ Cirona 是一个 Windows 桌面工具，让模拟 IC 工程师通过自然语言
 不需要。Cirona 内置 ngspice + 虚拟 180nm / 55nm PDK，不需要商业 EDA 授权。
 
 **支持自己的工艺库吗？**
-v1.0 暂不支持，未来版本会开放接口。
+支持。在 **Settings → PDK Library → 添加 PDK…** 选择源 PDK 目录即可（要求目录下包含
+`config/pdk_config.json`），任何 ngspice 能识别的标准 SPICE 格式 PDK 都可以导入。
+提供三种导入模式：*reference*（零拷贝，默认）、*junction*（在数据目录下建符号链接）、
+*copy*（完整复制）。添加完成后无需重启，新建 Library 时下拉列表里立刻能看到。
 
 **API Key 安全吗？**
 Key 只保存在本机 `<数据目录>\.cirona\settings\.env`，不上传任何服务器。Cirona 本身不联网，AI 调用直接从你的电脑发到对应 provider。
@@ -238,7 +249,7 @@ Key 只保存在本机 `<数据目录>\.cirona\settings\.env`，不上传任何�
 **升级版本时数据会丢失吗？**
 不会。用户数据保存在你选的数据目录里，与安装包完全分离，覆盖安装不影响数据。
 
-## 已知限制（v1.0-rc）
+## 已知限制
 
 - 仅支持 Windows（Mac / Linux 计划中）
 - 安装包无代码签名，Windows Defender 会弹警告
@@ -251,9 +262,7 @@ Key 只保存在本机 `<数据目录>\.cirona\settings\.env`，不上传任何�
 ## 开发路线
 
 - [ ] Mac / Linux 支持
-- [ ] Python 运行时内嵌（无需用户手动安装）
 - [ ] 更多电路族（Switched-Capacitor / Class-D / PLL）
-- [ ] 自定义 PDK 导入
 - [ ] 多 corner 波形对比
 
 ## 仓库内容说明

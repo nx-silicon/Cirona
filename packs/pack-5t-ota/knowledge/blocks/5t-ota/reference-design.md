@@ -154,8 +154,12 @@ X1   vinp vinn ibias out vdd 0 five_transistor_ota
   let phase_deg = vp(out) - vp(vinp)
   meas ac dc_gain      find gain_db    at=1
   meas ac gbw_hz       when gain_db=0  cross=1
-  meas ac phase_at_gbw find phase_deg  when gain_db=0 cross=1
-  meas ac pm_deg       param='180 + phase_at_gbw'   $ PM = 180 + phase_at_gbw
+  meas ac phase_dc     find phase_deg  at=1
+  meas ac phase_at_ugf find phase_deg  when gain_db=0 cross=1
+  * Anchor-difference PM (universal，对 vinp/vinn 注入 + 内部反相数都对):
+  *   PM = 180° - (phase_dc - phase_at_ugf) — phase 走过的距离与 -180° 的余量
+  * 适用：5T-OTA 主极点远高于 1Hz，phase_dc=at(1Hz) 取到干净 DC phase
+  meas ac pm_deg       param='180 - (phase_dc - phase_at_ugf)'
 .endc
 .end
 ```

@@ -182,15 +182,23 @@ meas ac phase_at_gbw  find phase_deg  at=gbw
 meas ac phase_at_gbw  find phase_deg  when gain_db=0 cross=1
 ```
 
-需要做派生计算（如 PM = 180 + phase_at_gbw，**注意符号**）用 `meas ... param='...'` 形式：
+需要做派生计算（PM）用 `meas ... param='...'` 形式。**PM 公式按主极点位置选**：
+
 ```spice
-* phase_at_gbw 是 signed loop-gain phase（在 GBW 处常为负）
-* 稳定 OPA：PM = 180 + phase_at_gbw（不是 -）
-* 例：phase_at_gbw = -120° → PM = 60°
-meas ac pm_deg param='180 + phase_at_gbw'
+* OTA (主极点 >> 1Hz, anchor-difference universal)：
+meas ac phase_dc     find phase_deg at=1
+meas ac phase_at_ugf find phase_deg when gain_db=0 cross=1
+meas ac pm_deg       param='180 - (phase_dc - phase_at_ugf)'
+
+* LDO (主极点 < 1Hz, 起点观察法 — anchor-difference 会算偏):
+meas ac phase_at_ugf find phase_deg when gain_db=0 cross=1
+* PMOS-pass + EA(+)=vfb 标准 LDO: forward gain DC 起点 180° → pm = phase_at_ugf
+let pm_deg = phase_at_ugf
 ```
-**易错点**：写 `180 - phase_at_gbw` 在 phase 为负时给出 > 180° 的值（错）。
-详见 `simulators/ngspice/analyses.md` AC 测量段的 PM 公式说明。
+
+**易错点**：旧公式 `param='180 + phase_at_gbw'` 仅 forward gain DC 起点 0° + UGF
+phase 在第三象限时对，**反相 forward gain (起点 180°) 时给 nonsense**。详见
+`simulators/ngspice/measurements.md` § AC PM 模板（两方法适用场景）。
 
 ---
 

@@ -27,7 +27,11 @@ chapters:
     summary: 8 类失败模式（PM 紧 / gain 低 / vx rail / slew / 大 CL / Cc 接错 / units=degrees / mirror imbalance）+ 根因表
     tokens: ~1600
   - name: standard-tests
-    summary: ⭐ OTA 标准测试套件（OTA-T1 DC OP open-loop / T2 AC PM Method C closed-loop / T3 PSRR / T4 Slew / T5 ICMR / T6 Settling）+ testbench 模式 IRON LAW（DC OP 必 open-loop，AC 必 closed-loop，Demo 02 实证）
+    summary: |
+      ⭐ OTA 标准测试套件（T1 DC OP closed-loop 主推 / T1b open-loop sanity 备用 /
+      T2 AC PM Method C / T3 PSRR / T4 Slew / T5 ICMR / T6 Settling）+ Iron Law —
+      DC 与 AC 必须用同一激励（DC closed via Rfb=1G/10Meg + Cfb=1F），high-gain
+      two-stage open-loop DC 不可靠
     tokens: ~900
   - name: reference-design
     summary: production-grade two-stage OTA 网表（PMOS-input + NMOS mirror + NMOS-CS + Miller Cc/Rz）+ standard cir/tb 路径 + sizing 起点

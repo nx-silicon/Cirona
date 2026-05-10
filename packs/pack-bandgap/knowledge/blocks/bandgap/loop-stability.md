@@ -244,8 +244,14 @@ bandgap loop 断点选在 **yg 节点 ↔ mirror gate 之间**：
   let phase_deg = vp(yg_open) - vp(yg_closed)
   meas ac dc_gain      find gain_db    at=1
   meas ac gbw_hz       when gain_db=0  cross=1
-  meas ac phase_at_gbw find phase_deg  when gain_db=0 cross=1
-  meas ac pm_deg       param='180 + phase_at_gbw'
+  meas ac phase_dc     find phase_deg  at=1
+  meas ac phase_at_ugf find phase_deg  when gain_db=0 cross=1
+  * Anchor-difference PM (universal):
+  *   PM = 180° - (phase_dc - phase_at_ugf)
+  * Bandgap loop GBW 10-50kHz，主极点 ~Hz 级，phase_dc=at(1Hz) 略有滞后
+  * 但 1Hz 仍在主极点附近 (误差 < 10°)，方法 B 可用；
+  * 如外环 Ccomp 大让主极点 << 1Hz，改用 LDO 方法 C 起点观察法
+  meas ac pm_deg       param='180 - (phase_dc - phase_at_ugf)'
   print dc_gain gbw_hz pm_deg
 .endc
 .end

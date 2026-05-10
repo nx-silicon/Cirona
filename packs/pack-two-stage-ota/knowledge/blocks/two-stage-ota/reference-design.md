@@ -32,7 +32,8 @@ related_knowledge:
 | Asset | 用途 |
 |---|---|
 | `reference_designs/two_stage_ota.cir` | 完整网表 |
-| `reference_designs/tb_dc_op.sp` | DC OP testbench |
+| `reference_designs/tb_dc_closed.sp` | ⭐ DC OP testbench（**主推**，与 AC 共用激励）|
+| `reference_designs/tb_dc_op.sp` | DC OP sanity 备用（open-loop，仅作 mismatch=0 对照）|
 | `reference_designs/tb_ac_gain_bw.sp` | AC gain/BW/PM testbench |
 
 通过 `load_knowledge(name='two-stage-ota', asset='<上表 Asset 列>')` 拿原文。**禁止用 `read_file` 读知识库内容** — knowledge tool 是唯一合规入口。
@@ -109,27 +110,35 @@ related_knowledge:
 - PM 不够 → 加大 Cc（30% step）or 调 Rz
 - slew rate 不够 → 加 `m_stage2_n` 提 I_stage2（典型 4:1 ~ 10:1 vs Stage1 Itail）
 
-## Standard testbench 模板（DC OP 与 AC PM **必分开**）
+## Standard testbench 模板（DC OP 与 AC 共用激励）
 
-> ⭐ **IRON LAW（Demo 02 实证）**：
-> - **DC OP 必 open-loop**（VINP=VINN=Vcm_in 强制），不能套 Rfb=1G+Cfb 闭环
-> - **AC 测 PM / GBW / PSRR 才用 closed-loop Method C**（Rfb=1G + Cfb=1 + AC 注入）
-> - **不要把 AC testbench 当 DC OP 跑** —— Demo 02 卡点：DeepSeek 看到只有一个
->   Rfb=1G template 就拿来跑 .op，结果闭环正反馈把 vinn 锁死到 rail
->   (vinn≈VDD → MP2 关 → vx≈0 → MN6 关 → vout→VDD 锁死)，反复试 7-10 turn
->   才意识到要换 open-loop 模板
+> ⭐ **IRON LAW（DC 与 AC 必须用同一激励）**：
+> - **DC OP 默认 closed-loop**（Rfb=1G/10Meg + Cfb=1F），与 AC testbench 同一组
+>   Vinp/Ibias/Rfb/Cfb 激励，仅切换 `.op` ↔ `.ac`
+> - **DC 工作点决定 small-signal 参数**（gm, gds, ro），AC 测出来的 gain/PM 必须基于
+>   "AC 部署时实际收敛到的 OP"。如果 DC 用 open-loop（VINP=VINN 强制）、AC 用
+>   closed-loop（Rfb shunt），两者 OP 不同 → AC 结果与实际部署状态无关，**毫无意义**
+> - **High-gain (≥60dB) two-stage open-loop DC 不可靠**：stage1/stage2 mismatch 被
+>   开环增益放大，即使 VINP=VINN 数学相等，数值精度 + device 参数 mismatch 让 vout
+>   常飘 rail。这是物理规律不是 sizing bug。closed-loop 把 OP 拉回 Vcm 附近
+>   (Rfb=1G 时 fc≈0.16nHz → DC 等效短路；high-gain 时可降至 10Meg/100Meg 让 DC
+>   loop 更紧)
+> - **Open-loop DC（VINP=VINN 强制）仅作 sanity 备用**：用于 mismatch=0 理想拓扑下的
+>   device region 验证；与 closed-loop 对比可定位"vout 飘 rail"是 Rfb 量级问题还是
+>   sizing 真问题
 > - 详细模式对比见横切章 `simulators/ngspice/testbench-patterns`
 
 实际 reference testbench 在 `assets/reference_designs/`：
-- `tb_dc_op.sp` ← **open-loop DC OP**（必读必抄，DC 阶段唯一选择）
+- `tb_dc_closed.sp` ← ⭐ **DC OP closed-loop**（主推，与 AC 共用激励）
+- `tb_dc_op.sp`     ← DC OP sanity 备用（open-loop，mismatch=0 对照）
 - `tb_ac_gain_bw.sp` ← Method C closed-loop（AC 测 PM 用）
 
-下面是两个 template 的最小骨架，**抄拓扑不抄数值**，Vdd/Vcm/ibias 按 spec 重定。
+下面是模板最小骨架，**抄拓扑不抄数值**，Vdd/Vcm/ibias/Rfb 按 spec 重定。
 
-### Template 1: DC OP（open-loop）
+### Template 1: DC OP（closed-loop，主推）
 
 ```spice
-* DC Operating Point — open-loop, VINP=VINN=Vcm 强制
+* DC Operating Point — closed-loop（与 AC testbench 同一激励，仅切 .op）
 * 用途: 验 device region (sat/triode), V_ds_margin, bias chain
 .lib '../../pdk/<pdk>/<pdk>_corners.lib' TT
 .include './two_stage_ota.cir'
@@ -138,9 +147,12 @@ VDD vdd 0 DC <VDD>
 VSS vss 0 0
 IBIAS vdd ibias DC <iref>
 
-* ⭐ 双输入强制等于 Vcm_in（NO Rfb，NO 闭环），保 DC OP 不锁死
-VINP vinp 0 DC <Vcm_in>
-VINN vinn 0 DC <Vcm_in>
+* ⭐ 与 AC testbench 共用激励（DC closed via Rfb + Cfb）
+*    high-gain 时 Rfb 可降至 10Meg / 100Meg 让 DC loop 收得更紧
+Vcm  vcm  0   DC <Vcm_in>
+Vinp vinp vcm DC 0 AC 1            $ AC 1 仅 .ac 用，.op 模式下不影响
+Rfb  vout vinn 1G                  $ DC 闭环 (fc≈0.16nHz)
+Cfb  vinn 0   1                    $ Cfb=1F：AC 路径上 vinn 接地
 
 X1 vinp vinn vout ibias vdd vss two_stage_ota_se
 CL vout 0 5p
@@ -149,6 +161,8 @@ CL vout 0 5p
   set noaskquit
   op
   print all
+  echo "=== vinn vs Vcm（验 closed-loop 收敛）==="
+  print v(vinp) v(vinn) v(vout) v(vx)
   echo "=== Stage1 input pair ==="
   print @m.x1.mp1[id] @m.x1.mp1[vgs] @m.x1.mp1[vds] @m.x1.mp1[vdsat]
   print @m.x1.mp2[id] @m.x1.mp2[vgs] @m.x1.mp2[vds] @m.x1.mp2[vdsat]
@@ -163,7 +177,26 @@ CL vout 0 5p
 ```
 
 **Pass criterion**：所有 device region=SAT，Vds_margin = Vds − Vdsat > 50mV，
-vx 不在 rail（应 ≈ Vth_n + Vov，对 PMOS-input + NMOS-mirror 拓扑约 0.4-0.6V）。
+vx 不在 rail（应 ≈ Vth_n + Vov，对 PMOS-input + NMOS-mirror 拓扑约 0.4-0.6V），
+**vinn 应与 Vcm 收敛在 50mV 以内**（偏离过大 → Rfb 太大 / stage1 imbalance）。
+
+### Template 1b: DC OP sanity（open-loop，仅作诊断对照）
+
+仅当 Template 1 closed-loop 下 vout 飘 rail 时用本模板做对照，定位是 sizing 问题
+还是 Rfb 量级 / mirror match 问题。**不作主测**：
+
+```spice
+* DC OP sanity — open-loop（mismatch=0 理想拓扑下 region 验证）
+VINP vinp 0 DC <Vcm_in>            $ 直接 DC 强制
+VINN vinn 0 DC <Vcm_in>
+* NO Rfb, NO Cfb
+.op
+```
+
+诊断对照逻辑：
+- T1 fail / T1b pass → Rfb 量级或 stage1 mirror imbalance
+- T1 fail / T1b fail → 真 sizing 问题
+- T1 pass / T1b 飘 rail → **预期常态**（high-gain open-loop 物理本不可靠）
 
 ### Template 2: AC gain / GBW / PM（Method C closed-loop）
 
@@ -311,7 +344,9 @@ CL vout 0 5p
 
 通过 `load_knowledge(name='two-stage-ota', asset=...)` 拿以下文件抄拓扑（Stage1 5T / Stage2 CS / Miller Cc+Rz 连接，**不复制数值**）：
 - `reference_designs/two_stage_ota.cir`
-- `reference_designs/tb_dc_op.sp`
+- `reference_designs/tb_dc_closed.sp` ← ⭐ DC OP testbench 主推
+- `reference_designs/tb_ac_gain_bw.sp`（与 tb_dc_closed.sp 共用激励）
+- `reference_designs/tb_dc_op.sp` ← 仅作 open-loop sanity 对照（可选）
 
 ### Step 2 — 推导 W/L/m（R0 铁律）
 
@@ -332,7 +367,9 @@ CL vout 0 5p
 
 ### Step 4 — 仿真验证
 
-`simulate` `testbench/tb_dc_op.sp` → 验证 DC OP / 再跑 `tb_ac_gain_bw.sp` 验 gain/PM
+`simulate` `testbench/tb_dc_closed.sp` → 验证 DC OP（closed-loop 主测）/
+再跑 `tb_ac_gain_bw.sp` 验 gain/PM（与 DC 共用激励）。
+仅当 vout 飘 rail 需诊断时再跑 `tb_dc_op.sp` 做 open-loop sanity 对照。
 
 **ngspice 关键约定**：
 - testbench `set units = degrees`（避免 vp() 弧度未转度，PM 178° 假象）

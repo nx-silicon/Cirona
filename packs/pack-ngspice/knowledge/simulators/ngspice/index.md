@@ -15,14 +15,14 @@ chapters:
     summary: 不收敛 / 矩阵奇异 / DC bias 漂移诊断 + .options 调整
     tokens: ~800
   - name: measurements
-    summary: .control / let / meas / wrdata / print 体系 + vp() radians 转 deg / 跨 plot echo $&var / PM 公式 180+phase
+    summary: .control / let / meas / wrdata / print 体系 + vp() radians 转 deg / 跨 plot echo $&var / PM 公式两方法（OTA 用 anchor-difference / LDO 主极点 < 1Hz 用起点观察法）
     tokens: ~900
   - name: common-errors
     summary: 14 条 V3 实战踩坑 → 症状/原因/修复对照表
     tokens: ~900
   - name: testbench-patterns
-    summary: ⭐ 横切章 — Testbench 模式选择 IRON LAW（DC OP open-loop / AC closed-loop Method C / PSRR VDD AC 注入 / Tran 大信号 / ICMR）+ 6 种模式速查决策表 + Demo 02 实证（闭环跑 .op → vinn 锁 rail → triode 灾难）。所有 PACK reference 此章
-    tokens: ~1000
+    summary: ⭐ 横切章 — Testbench 激励 IRON LAW（DC 与 AC 必须用同一激励 / DC OP closed-loop 主推 + open-loop sanity 备用 / Method C / PSRR / 大信号 Tran / ICMR）+ 6 种模式速查决策表。所有 PACK reference 此章
+    tokens: ~1100
 
 trigger:
   explicit:

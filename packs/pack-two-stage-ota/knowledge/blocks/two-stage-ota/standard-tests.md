@@ -2,11 +2,11 @@
 chapter: standard-tests
 parent: two-stage-ota
 summary: |
-  Two-stage OTA 标准测试套件（OTA-T1~T6）— DC OP open-loop / AC Method C
-  closed-loop / PSRR / Slew rate / ICMR / Settling。每项明确 testbench 模式
-  (open vs closed) + Pass criterion + 实战陷阱（Demo 02 实证：DC OP 用闭环
-  testbench → vinn 锁死 rail → triode 灾难 7-10 turn）。
-  Iron Law: testbench 模式选错 = 仿真不收敛 / 收敛到错点；不能调 sizing 救。
+  Two-stage OTA 标准测试套件（OTA-T1~T6）— DC OP closed-loop (主推) / AC
+  Method C closed-loop / PSRR / Slew rate / ICMR / Settling。
+  Iron Law: DC 与 AC 必须用同一激励（DC closed via Rfb=1G/10Meg + Cfb=1F →
+  AC open at f > fc≈0.16nHz）。high-gain (≥60dB) two-stage open-loop DC
+  不可靠（mismatch 被开环增益放大），open-loop 仅作 sanity 备用模板。
 tokens: ~900
 prerequisite_chapters:
   - reference-design
@@ -26,11 +26,13 @@ related_knowledge:
 
 任何 two-stage OTA 设计必须跑下列 P0 全集才算"验证完成"。**缺任一项 = 未验证**。
 
-**testbench 模式 IRON LAW**：
+**testbench 激励 IRON LAW（DC 与 AC 必须一致）**：
 
-1. **DC OP** → 必 **open-loop**（VINP=VINN=Vcm_in 强制，无 Rfb）
-2. **AC gain/GBW/PM** → 必 **closed-loop Method C**（Rfb=1G + Cfb=1F + AC 注入）
-3. **不要混用** —— Demo 02 实证：DeepSeek 用 Rfb=1G 闭环 testbench 跑 DC OP，闭环正反馈把 vinn 锁死到 rail（vinn≈VDD → MP2 关 → vx≈0V → MN6 关 → vout→VDD），多个 device 进 triode，浪费 7-10 turn 才发现是 testbench 模式错（不是 sizing 错）
+1. **DC OP**（默认）→ **closed-loop**：Rfb=1G/10Meg + Cfb=1F，VINP 接 Vcm + AC 1，VINN 由 Rfb 跟随
+2. **AC gain/GBW/PM** → **closed-loop Method C**：与 DC 同一 testbench 激励（同一 Rfb/Cfb），仅切换 `.op` ↔ `.ac`
+3. **DC 与 AC 共用同一组 Vinp/Ibias/Rfb/Cfb 激励** —— 调好 DC 工作点的目的就是给 AC 一个正确的小信号模型；DC 用 open-loop、AC 用 closed-loop 混用 → 两者 OP 不同 → AC 测出的 gain/PM 与实际部署状态无关，**毫无意义**
+4. **Open-loop DC（VINP=VINN 强制）仅作 sanity 备用模板**：用于 mismatch=0 理想拓扑下的 device region 验证；high-gain (≥60dB) two-stage open-loop 时，stage1/stage2 mismatch 被开环增益放大就飘 rail，这是物理规律不是 sizing bug
+5. **Slew rate / Settling（OTA-T4 / T6）大信号 transient** 需要 open-loop 激励（closed-loop 的 Rfb 把 vout 拉回静态点会盖住 slew/settling）；但 transient 起始 OP 必须用 closed-loop 模板的设计参数收敛
 
 详细模式对比 + 跨电路通用规则见横切章 `simulators/ngspice/testbench-patterns`。
 
@@ -38,26 +40,29 @@ related_knowledge:
 
 ## P0 必测项（不通过不得发布）
 
-| 测试 ID | 测试名 | testbench 模式 | 关键测量 | Pass Criterion |
+| 测试 ID | 测试名 | testbench 激励 | 关键测量 | Pass Criterion |
 |---|---|---|---|---|
-| **OTA-T1** | DC OP @ Vcm_in nominal | **open-loop** | 全 device region / Vds_margin / bias chain | 全 SAT，Vds_margin > 50mV，vx 不在 rail |
-| **OTA-T2** | AC Gain / GBW / PM | **closed-loop Method C** | dc_gain, GBW, PM | 满足 spec target；PM ≥ 60° 默认 |
+| **OTA-T1** | DC OP @ Vcm_in nominal | **closed-loop**（Rfb=1G/10Meg + Cfb=1F） | 全 device region / Vds_margin / bias chain | 全 SAT，Vds_margin > 50mV，vx 不在 rail |
+| **OTA-T2** | AC Gain / GBW / PM | **closed-loop Method C**（与 T1 共用激励，切 `.ac`） | dc_gain, GBW, PM | 满足 spec target；PM ≥ 60° 默认 |
 | **OTA-T3** | PSRR | closed-loop + VDD AC 注入 | PSRR_DC, PSRR @1kHz/100kHz | spec target；@HF 通常受 ESR 限制 |
 | **OTA-T4** | Slew rate | open-loop + Tran 大信号阶跃 | SR+ / SR− | spec target；通常 = I_stage2 / CL |
-| **OTA-T5** | ICMR (Input CM range) | DC sweep VINP=VINN | 输出范围 / 增益保持 | 在 spec ICMR 范围内 device 全 SAT |
+| **OTA-T5** | ICMR (Input CM range) | DC sweep VINP=VINN（open-loop 形式）| 输出范围 / 增益保持 | 在 spec ICMR 范围内 device 全 SAT |
 | **OTA-T6** | Settling time | open-loop + Tran 小信号阶跃 | 0.1% / 1% settling | spec target；与 GBW 关联 |
+| **OTA-T1b** | DC OP sanity（可选）| open-loop（VINP=VINN 强制）| 与 T1 对照看 mismatch | 用于诊断：T1 fail 但 T1b pass → Rfb/mirror match；两者都 fail → sizing |
 
 ---
 
-## OTA-T1: DC OP @ Vcm_in nominal（open-loop）
+## OTA-T1: DC OP @ Vcm_in nominal（closed-loop，主推）
 
-### testbench 关键配置（必抄不可改）
+### testbench 关键配置（与 T2 共用激励）
 
 ```spice
-* OTA-T1 DC OP — open-loop（VINP=VINN=Vcm 强制）
-VINP vinp 0 DC <Vcm_in>            $ NOT vcm + AC source
-VINN vinn 0 DC <Vcm_in>            $ NOT through Rfb
-* NO Rfb, NO Cfb — 闭环会让 vinn 收敛到错误静态点
+* OTA-T1 DC OP — closed-loop（DC closed via Rfb + Cfb，与 T2 同一 testbench）
+* high-gain two-stage 必须用闭环 DC，open-loop 时 mismatch 被开环增益放大就飞 rail
+Vcm  vcm  0   DC <Vcm_in>
+Vinp vinp vcm DC 0 AC 1            $ AC 1 仅 T2 用，DC 模式下不影响
+Rfb  vout vinn 1G                  $ DC 闭环 (fc≈0.16nHz)；high-gain 时可降至 10Meg/100Meg
+Cfb  vinn 0   1                    $ Cfb=1F 让 vinn AC 接地（T2 用）
 X1 vinp vinn vout ibias vdd vss two_stage_ota
 .op
 ```
@@ -70,16 +75,35 @@ X1 vinp vinn vout ibias vdd vss two_stage_ota
 | Vds_margin = Vds − Vdsat | > 50 mV（10× corner 余量） |
 | vx (Stage1 真输出) | 不在 rail；典型 0.4-0.6V（PMOS-input + NMOS-mirror） |
 | vout (Stage2 输出) | 不在 rail；典型 ≈ VDD/2 |
+| vinn vs Vcm | 误差 < 50mV（Rfb 收敛紧）；偏离大 → Rfb 太大或 stage1 imbalance |
 | Itail 实测 vs 设计 | 误差 < 5% |
 
 ### 常见 FAIL 原因
 
 | 症状 | 根因 | 修复 |
 |---|---|---|
-| **vinp/vinn 钉到 VDD 或 VSS** | testbench 用了 Rfb=1G 闭环（Demo 02 实证）| **去掉 Rfb，VINP=VINN=Vcm 直接 DC 强制** |
+| vinn 偏离 Vcm > 50mV | Rfb 太大让 DC loop 太软 / stage1 mirror imbalance | Rfb 降至 10Meg-100Meg；同时验 MN3/MN4 W·m match |
 | MPTAIL Vsd < Vdsat | tail headroom 不够，Vov_diff 太大 | 减 W_diff / 加 L_tail / 改 input pair 极性 |
 | vx ≈ 0V（钉到 VSS） | input pair sub-threshold，gm 灾难 | 检查 input pair 极性 self-check（cm-range L2）|
 | Itail 漂大 | bias chain 镜像比例算错 | 见 architecture Pitfall 3（mirror 用 W·m 比） |
+| vout 飘 rail（closed-loop 下也飘）| stage1/stage2 上下电流真不匹配 / sizing 问题 | 看 m_MP6 vs m_MN6；详见 troubleshooting 模式 9 决策树 |
+
+### OTA-T1b: DC OP sanity（open-loop 备用）
+
+**仅作诊断对照**（不作主验证），定位"closed-loop 下 vout 飘 rail"的根因：
+
+```spice
+* OTA-T1b DC OP sanity — open-loop（mismatch=0 sanity 检查）
+VINP vinp 0 DC <Vcm_in>            $ 直接 DC 强制
+VINN vinn 0 DC <Vcm_in>
+* NO Rfb, NO Cfb — 仅作 sanity，不是主测
+.op
+```
+
+诊断逻辑：
+- T1 fail（closed-loop） + T1b pass（open-loop） → Rfb 量级 / Cfb / stage1 mirror imbalance
+- T1 fail + T1b fail → 真 sizing 问题（tail headroom / 极性 / 上下电流匹配）
+- T1 pass + T1b fail（vout 飘 rail）→ **预期常见**，high-gain open-loop 物理本就不可靠
 
 ---
 
@@ -225,8 +249,9 @@ OTA-T1 fail 时**绝对不要**跑 T2-T6（DC OP 错的网表跑 AC 全是垃圾
 
 ## When NOT to skip
 
-- "仿真已通过 OTA-T2，DC OP 应该 OK 不用单跑" — **错**。AC closed-loop testbench
-  让 OP 强制收敛到 vcm，可能掩盖 device region 错（triode/cutoff）。**T1 单独 open-loop 跑才能暴露**。
+- "AC 测出 PM=65° spec 满足，DC 不用看了" — **错**。AC `.ac` 在 T1 的 closed-loop OP 上跑，
+  你必须**先单独 `.op`** 看每个 device 的 region 和 Vds_margin。`.ac` 自己不会
+  报告 device 进 triode（只看小信号导纳，triode 区一样有 gm）。
 - "我已经手工算了 DC OP 节点电压" — **不算**。仿真才是 truth。
 
 ## Related

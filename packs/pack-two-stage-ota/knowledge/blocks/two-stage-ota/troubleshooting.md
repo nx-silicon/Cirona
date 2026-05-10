@@ -24,11 +24,11 @@ related_skills:
 > 见 `bias-headroom.md` —— 本章不重复 R1/R2 推理细节，只列根因表 + 链接。
 > **AC 极点 / Miller 补偿失稳** 见 `ac-stability.md`。
 
-## ⭐ 优先诊断分支（看到 DC OP triode_count > 1 必先看模式 9）
+## ⭐ 优先诊断分支
 
 | 主症状 | 先看模式 |
 |---|---|
-| **DC OP triode_count ≥ 2 + vinp/vinn 钉到 rail (≈VDD 或 ≈VSS)** | **模式 9（testbench 模式错）** ⭐ |
+| DC OP triode_count ≥ 2 + vout 飘到 rail (≈VDD 或 ≈VSS) | 模式 9（DC OP 不收敛 → 多根因排查） ⭐ |
 | DC OP triode（vinp/vinn 在 Vcm_in 附近）+ tail 进 triode | 模式 3 / `bias-headroom.md` |
 | AC PM < 50° | 模式 1 |
 | DC gain < 80 dB | 模式 2 |
@@ -36,9 +36,11 @@ related_skills:
 | slew rate 慢 | 模式 4 |
 | 大 CL 失稳 | 模式 5 |
 
-**铁律**：DC OP 失败时**先验 vinp/vinn 是否在 Vcm_in 附近**。如果 vinp/vinn 钉到 rail
-→ testbench 闭环锁死（**100% 是 testbench 错，不是 sizing 错**）→ 不要调 W/L 救（v1
-实证：浪费 7-10 turn）。
+**铁律**：DC OP 失败时**先确认是否用了 closed-loop 模板**（推荐主用 `tb_dc_closed.sp`，
+DC closed via Rfb=1G/10Meg + Cfb=1F）。**high-gain (≥60dB) two-stage OTA open-loop
+DC 不可靠** —— 即使 VINP=VINN 数学强制，stage1/stage2 mismatch 被开环增益放大就
+飘 rail，这是物理规律不是 sizing bug。closed-loop 失败再去查 sizing / mirror match /
+Rfb 取值。
 
 ## 失败模式 1：PM < 50°（**2-stage 最常见失败**）
 
@@ -232,72 +234,64 @@ testbench 模板 + `simulators/ngspice/measurements`。
 
 ---
 
-## 失败模式 9：DC OP triode 灾难（**testbench 闭环锁死，Demo 02 实证**）⭐
+## 失败模式 9：DC OP 不收敛 / vout 飘 rail（多根因）⭐
 
 **症状**：
 - DC OP `_op_state.json` 显示 `triode_count ≥ 2`（多个 device 进 triode）
-- **vinp / vinn 钉到 rail**（≈ VDD 或 ≈ VSS，远离 Vcm_in）
-- vx (Stage1 输出) ≈ 0V 或 ≈ VDD（钉死）
-- vout ≈ VDD 或 VSS（无下拉/上拉）
+- vout ≈ VDD 或 VSS（钉死，无法收敛到 ≈ VDD/2）
+- vx (Stage1 输出) ≈ 0V 或 ≈ VDD
 - 多个 device Vds ≈ 0V
 
-**Demo 02 实证（2026-05-01 DeepSeek-v4-pro 31 turn）**：
+### 物理解释
 
-| Device | 状态 | Vds | Vdsat | 现象 |
-|---|---|---|---|---|
-| MPTAIL | TRIODE | 75mV | 105mV | margin = -29mV，tail 微弱进 triode |
-| MN4 | TRIODE | ≈0V | 103mV | vx≈0V，差分对失衡 |
-| MP6 | TRIODE | ≈0V | 99mV | vout=VDD，Stage 2 无法下拉 |
+two-stage OTA 是高增益运放（80-100dB）。**open-loop DC 模板**（VINP=VINN 强制）下，
+stage1 上下电流任何不匹配（mismatch + 数值精度）都会被开环增益放大到 vout 飞 rail；
+**closed-loop DC 模板**（Rfb=1G/10Meg + Cfb=1F）下也会失败 —— 但失败原因更接近真实
+sizing 问题，因为反馈环路把 vout 拉回 Vcm 附近，是 sizing/mirror match/Rfb 取值
+真有问题才发散。
 
-vinn 实测 = 1.195V (≈VDD = 1.2V) → MP2 Vsg ≈ 5mV < |Vth_p| → **MP2 几乎关断** →
-vx 拉到 0V → MN6 关 → vout 上飘到 VDD → Rfb=1G 让 vinn 跟随 vout → 正反馈锁死。
+### 根因可能性表（按发生频率排）
 
-### 根因（100% 是 testbench 模式错，不是 sizing 错）
+| 可能根因 | 验证 | 修复 |
+|---|---|---|
+| **当前用的是 open-loop 模板**（high-gain 不可靠）| 看 testbench 是否含 `Rfb vout vinn ...` + `Cfb vinn 0 ...` | **换成 `tb_dc_closed.sp`**（DC closed via Rfb=1G/10Meg + Cfb=1F），与 `tb_ac_gain_bw.sp` 共用激励 |
+| Stage1 mirror imbalance（MN3.W ≠ MN4.W / MN4.G 接错节点）| 看 vx 是否远离 VDD/2；`inspect_node('vx')` | 严格 match MN3/MN4 W·m；MN4.G = vx_l |
+| Stage2 上下电流不匹配（MP6 ratio vs MN6 ratio 错）| 算 m_MP6 × W_MP6 vs m_MN6 × W_MN6 / I_stage2 设计值 | 调 m_MP6（**不调 W_MP6**），保 mirror ratio |
+| Tail headroom 不够（MPTAIL 进 triode）| `inspect_device('mptail')` Vds vs Vdsat | 减 W_diff / 加 L_tail；详见 `bias-headroom.md` 范例 |
+| Input pair 极性错（PMOS-input + Vcm > VDD−|Vth_p|−0.1）| Step 0.2 cm-range L2 self-check | 切 NMOS-input variant（详见 `architecture.md`）|
+| Rfb 太大（high-gain 时 closed-loop 也太"软"）| Rfb=1G + 极高增益 → DC loop 微弱 | Rfb 降至 10Meg-100Meg；DC 拉回 vinn ≈ Vcm 更紧 |
+| Bias chain ratio 算错（Itail 漂大/小）| 算 mirror W·m 比 vs 设计 ratio | 见 `architecture.md` Pitfall 3 |
 
-agent 拿 **AC closed-loop testbench**（含 `Rfb vout vinn 1G` + `Cfb vinn 0 1`）跑
-`.op` → 闭环正反馈把工作点锁到错误稳态：vinn → rail → input pair 一边关断 →
-loop 失效。
-
-`Rfb=1G + Cfb=1F` 是给 **AC 测 PM** 用的（fc≈0.16nHz 让 DC 等效短路、AC 全开），
-**不是给 DC OP 用的**。
-
-### 修复（**唯一正确做法**：换 testbench 模式）
-
-```spice
-* 错的（DC OP 用 AC 模板 → 闭环锁死）:
-Rfb  vout vinn 1G
-Cfb  vinn 0   1
-.op                   $ ❌ 必锁死
-
-* 对的（DC OP 必 open-loop，VINP=VINN=Vcm 强制）:
-VINP vinp 0 DC <Vcm_in>
-VINN vinn 0 DC <Vcm_in>
-* NO Rfb, NO Cfb
-.op                   $ ✅
-```
-
-详见 `standard-tests.md` § OTA-T1 + `reference-design.md` § Standard testbench
-模板 + 横切章 `simulators/ngspice/testbench-patterns`。
-
-### 严禁
-
-- **不要调 sizing 救 testbench 错**：vinn 钉到 rail 是闭环正反馈结果，跟 W/L 无关
-- **不要怀疑 PDK / device 模型**：现象明确，testbench 模式问题
-- **不要"多调几个 device 试试"**：v1 实证浪费 7-10 turn
-
-### 决策树（看到 DC OP triode 时）
+### 决策树
 
 ```
-DC OP triode_count > 1
-  ├─ vinp / vinn 在 Vcm_in 附近 (差 < 50mV)?
-  │    ├─ 是 → sizing 问题（tail headroom 不够 / input pair 极性错）
-  │    │       → 看 cm-range L2 self-check + bias-headroom.md
-  │    └─ 否 → vinp/vinn 钉到 rail
-  │            → ⭐ 100% testbench 模式错（闭环锁死）
-  │            → 换 open-loop DC OP testbench (本模式 9)
-  └─ 全 device 都 saturation？
-       → 单纯 spec margin 不够，调 sizing
+DC OP triode_count > 1 / vout 飘 rail
+  ├─ Step 1: 当前 testbench 是 open-loop（VINP=VINN 强制）？
+  │    ├─ 是 → 换 closed-loop 模板 (tb_dc_closed.sp) 重跑
+  │    │       └─ 仍 fail → 进 Step 2
+  │    │       └─ Pass    → 完成（high-gain open-loop 不可靠是常态）
+  │    └─ 否 → 进 Step 2
+  │
+  ├─ Step 2: closed-loop 下 vinp/vinn 是否在 Vcm 附近 (差 < 50mV)?
+  │    ├─ 是 → 真 sizing 问题
+  │    │      ├─ 看 stage1 mirror match (MN3/MN4 W·m / MN4.G 节点)
+  │    │      ├─ 看 stage2 上下电流匹配 (m_MP6 vs m_MN6)
+  │    │      ├─ 看 tail headroom (MPTAIL Vds vs Vdsat)
+  │    │      └─ 看 input pair 极性 (cm-range L2)
+  │    └─ 否（vinn 仍偏离 Vcm 30mV+）→ Rfb 太大或 stage1 imbalance
+  │            ├─ Rfb 降 1G → 10Meg / 100Meg 试
+  │            └─ 同时验 stage1 mirror match
+  └─ Step 3: 全 device sat 但 spec 不达标
+       → 单纯 spec margin 不够，调 sizing (sizing-typical.md Phase A/B/C)
 ```
+
+### Anti-pattern（不要做）
+
+- ❌ **看到 vout 飘 rail 就归因为 testbench 模式错** —— 真因更可能是 sizing/mirror match
+- ❌ **强行用 open-loop DC 当默认模板**（high-gain 运放上不可靠，且与 AC 激励不一致）
+- ❌ **DC 用 open-loop / AC 用 closed-loop 混用** —— 两者 OP 不同，AC 测出的 gain/PM
+  与实际部署状态无关。**DC 与 AC 必须用同一激励**（同一 testbench 拓扑），调好 DC
+  工作点的目的就是给 AC 一个正确合理的小信号模型。
 
 ---
 
@@ -307,7 +301,7 @@ DC OP triode_count > 1
 - 看到 dc_snapshot 异常前先回 `bias-headroom.md` 验 headroom
 - PM 紧 → 先看 ac-stability.md 极点分布
 - agent 在调 sizing 撞壁（多次试都没收敛）
-- ⭐ DC OP triode_count > 1 + vinp/vinn 钉到 rail → 优先看模式 9
+- ⭐ DC OP triode_count > 1 / vout 飘 rail → 优先看模式 9
 
 ## Related
 

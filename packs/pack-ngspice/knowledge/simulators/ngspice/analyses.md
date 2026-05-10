@@ -174,14 +174,19 @@ related_skills:
   let phase_deg = 180/PI * vp(vout)
   meas ac gain_dc      find gain_db    at=1
   meas ac gbw_hz       when gain_db=0  cross=1
-  meas ac phase_at_gbw find phase_deg  when gain_db=0 cross=1
-  * PM 公式说明（极性敏感，必读）：
-  *   ngspice vp() 返回 wrapped signed phase（rad），上面 phase_deg 已转 deg
-  *   开环非反相 OPA：DC phase ≈ 0°，GBW 处 phase_at_gbw 通常为负（典型 -90 ~ -180°）
-  *   稳定 OPA 的 PM = 180 + phase_at_gbw（不是 180 - phase）
-  *   例：phase_at_gbw = -120° → PM = 180 + (-120) = 60° ✓
-  *   反相 OPA（DC phase ≈ -180°）需先 unwrap 到 [-180, 180] 或在公式中减 180
-  meas ac pm_deg       param='180 + phase_at_gbw'
+  meas ac phase_dc     find phase_deg  at=1
+  meas ac phase_at_ugf find phase_deg  when gain_db=0 cross=1
+  * PM 公式（按主极点位置选）:
+  *   方法 B (anchor-difference, OTA 默认 — 主极点 >> 1Hz):
+  *     PM = 180° - (phase_dc - phase_at_ugf)
+  *     物理：phase 走过的距离与 -180° 的余量；universal 对 vinp/vinn 注入 + 内部反相数都对
+  *     例: phase_dc=0°, phase_at_ugf=-120°  → PM = 180 - (0 - (-120)) = 60° ✓
+  *     例: phase_dc=180°, phase_at_ugf=60°  → PM = 180 - (180 - 60)   = 60° ✓
+  *   方法 C (起点观察法, LDO 必用 — 主极点 < 1Hz, anchor-diff 会算偏):
+  *     forward gain DC 起点 0°  → pm = 180 + phase_at_ugf
+  *     forward gain DC 起点 180° → pm = phase_at_ugf
+  *     不需 phase_dc 锚点，对低主极点稳健；要先确认拓扑 DC 极性
+  meas ac pm_deg       param='180 - (phase_dc - phase_at_ugf)'
 
   echo "gain_dc=$&gain_dc  gbw=$&gbw_hz  pm=$&pm_deg"
   wrdata ../simulation/tb_ac/bode.csv frequency gain_db phase_deg
