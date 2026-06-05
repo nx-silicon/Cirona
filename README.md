@@ -7,14 +7,14 @@
 *From spec to silicon — analog design assisted end-to-end*
 *从规格书到仿真验证，全流程 AI 辅助*
 
-[![Release](https://img.shields.io/badge/release-v0.9.0--beta-orange?style=flat-square)](https://github.com/nx-silicon/Cirona/releases/tag/v0.9.0)
+[![Release](https://img.shields.io/badge/release-v0.9.1--beta-orange?style=flat-square)](https://github.com/nx-silicon/Cirona/releases/tag/v0.9.1)
 [![Platform](https://img.shields.io/badge/platform-Windows-lightgrey?style=flat-square&logo=windows)](https://github.com/nx-silicon/Cirona/releases)
 [![Python](https://img.shields.io/badge/python-3.12%2B-yellow?style=flat-square&logo=python)](https://www.python.org/downloads/)
 [![GitHub](https://img.shields.io/badge/github-nx--silicon%2FCirona-181717?style=flat-square&logo=github)](https://github.com/nx-silicon/Cirona)
 
-📥 **[Download v0.9.0 Installer / 下载 v0.9.0 安装包](https://github.com/nx-silicon/Cirona/releases/tag/v0.9.0)**  ·  💬 **[Report an Issue / 提交反馈](https://github.com/nx-silicon/Cirona/issues)**
+📥 **[Download v0.9.1 Installer / 下载 v0.9.1 安装包](https://github.com/nx-silicon/Cirona/releases/tag/v0.9.1)**  ·  💬 **[Report an Issue / 提交反馈](https://github.com/nx-silicon/Cirona/issues)**
 
-> 🧪 **Public Beta / 公开测试版** — Cirona v0.9.0 是首个公开测试版本，欢迎试用并反馈问题。正式 v1.0 将在 beta 反馈收敛后发布。
+> 🧪 **Public Beta / 公开测试版** — Cirona v0.9.1 在 v0.9.0 基础上重写了上下文处理与压缩机制，修复了长对话偶发卡死问题。欢迎试用并反馈。正式 v1.0 将在 beta 反馈收敛后发布。
 
 [**English**](#english)  |  [**中文**](#中文)
 
@@ -67,14 +67,14 @@ drives ngspice (DC / AC / transient / noise), and self-corrects on the results.
 | Item | Requirement |
 |------|-------------|
 | OS | Windows 10 / 11 (x64) |
-| Disk | Installer ~176 MB; runtime data ~500 MB |
+| Disk | Installer ~268 MB; runtime data ~500 MB |
 | Python | **Bundled** — frozen Python 3.14 runtime in the installer |
 | ngspice | **Bundled** — no separate install needed |
 
 ## Install
 
-**1. Download & install Cirona** — grab the latest
-`win-<version>-64bit.exe` (currently `win-0.9.0-64bit.exe`, ~176 MB) from the
+**1. Download & install Cirona** — grab the latest installer
+(currently `Cirona-0.9.1-installer.exe`, ~268 MB) from the
 **[Releases page](https://github.com/nx-silicon/Cirona/releases)** and run it.
 Windows Defender SmartScreen may warn because the binary is unsigned — click
 **More info → Run anyway**. The installer lets you pick the install
@@ -192,13 +192,13 @@ Cirona 是一个 Windows 桌面工具，让模拟 IC 工程师通过自然语言
 | 项目 | 要求 |
 |------|------|
 | 操作系统 | Windows 10 / 11（x64） |
-| 磁盘空间 | 安装包 ~176MB，运行时数据 ~500MB |
+| 磁盘空间 | 安装包 ~268MB，运行时数据 ~500MB |
 | Python | **已内置**——安装包包含 frozen 的 Python 3.14 runtime |
 | ngspice | **已内置**，无需另行安装 |
 
 ## 安装步骤
 
-**1. 下载并安装 Cirona**——从 **[Releases 页面](https://github.com/nx-silicon/Cirona/releases)** 下载最新的 `win-<版本>-64bit.exe`（当前为 `win-0.9.0-64bit.exe`，约 176 MB），双击运行。Windows Defender 可能弹出 SmartScreen 警告（因没有代码签名证书），点击「更多信息」→「仍要运行」即可。安装时可以选择安装目录；用户数据默认放在 `D:\CironaData`（D 盘不存在会自动 fallback 到 E/F/G）。
+**1. 下载并安装 Cirona**——从 **[Releases 页面](https://github.com/nx-silicon/Cirona/releases)** 下载最新的安装包（当前为 `Cirona-0.9.1-installer.exe`，约 268 MB），双击运行。Windows Defender 可能弹出 SmartScreen 警告（因没有代码签名证书），点击「更多信息」→「仍要运行」即可。安装时可以选择安装目录；用户数据默认放在 `D:\CironaData`（D 盘不存在会自动 fallback 到 E/F/G）。
 
 **2. 首次启动**——splash 加载约 5–12 秒（Windows Defender 首次扫描加密模块，之后启动 < 2 秒）。主界面打开后，到 **Settings** 填至少一个 LLM provider 的 API Key 就能开始用。
 
